@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin: Attractions Data Viewer</title>
+
+    <!-- Prism.js for JSON syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+            color: #2d3748;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .filters {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"],
+        select {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            align-self: flex-end;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+        }
+
+        .btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        .attractions-list {
+            padding: 0;
+        }
+
+        .attraction-item {
+            border-bottom: 1px solid #e9ecef;
+            transition: background 0.2s;
+        }
+
+        .attraction-item:hover {
+            background: #f8f9fa;
+        }
+
+        .attraction-header {
+            padding: 20px 30px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .attraction-info {
+            flex: 1;
+        }
+
+        .attraction-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+
+        .attraction-location {
+            font-size: 14px;
+            color: #718096;
+        }
+
+        .attraction-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #718096;
+            margin-top: 8px;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat.has-data {
+            color: #48bb78;
+            font-weight: 500;
+        }
+
+        .expand-icon {
+            font-size: 20px;
+            color: #a0aec0;
+            transition: transform 0.2s;
+        }
+
+        .attraction-item.expanded .expand-icon {
+            transform: rotate(90deg);
+        }
+
+        .attraction-data {
+            display: none;
+            padding: 0 30px 20px 30px;
+        }
+
+        .attraction-item.expanded .attraction-data {
+            display: block;
+        }
+
+        .data-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .copy-btn {
+            padding: 6px 12px;
+            background: #48bb78;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #38a169;
+        }
+
+        .json-container {
+            background: #272822;
+            border-radius: 4px;
+            padding: 20px;
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #a0aec0;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .pagination {
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .pagination-info {
+            font-size: 14px;
+            color: #718096;
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #cbd5e0;
+            background: white;
+            color: #4a5568;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background: #f8f9fa;
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 30px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 30px;
+            color: #a0aec0;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            input[type="text"],
+            select {
+                min-width: 100%;
+            }
+
+            .attraction-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .attraction-stats {
+                flex-wrap: wrap;
+            }
+
+            .pagination {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Attractions Data Viewer</h1>
+            <p>View complete attraction data from all database tables</p>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label>Search</label>
+                <input type="text" id="searchInput" placeholder="Search attraction name...">
+            </div>
+            <div class="filter-group">
+                <label>City</label>
+                <select id="cityFilter">
+                    <option value="">All Cities</option>
+                </select>
+            </div>
+            <button class="btn" onclick="applyFilters()">Search</button>
+        </div>
+
+        <div id="attractionsList" class="attractions-list">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading attractions...</p>
+            </div>
+        </div>
+
+        <div id="pagination" class="pagination" style="display: none;">
+            <div class="pagination-info">
+                Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+                (<span id="totalAttractions">0</span> attractions)
+            </div>
+            <div class="pagination-controls">
+                <button class="page-btn" id="prevBtn" onclick="previousPage()">← Previous</button>
+                <button class="page-btn" id="nextBtn" onclick="nextPage()">Next →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentPage = 1;
+        let totalPages = 1;
+
+        // Load attractions list
+        async function loadAttractions() {
+
+            const searchTerm = document.getElementById('searchInput').value;
+            const cityFilter = document.getElementById('cityFilter').value;
+
+            const params = new URLSearchParams({
+                page: currentPage,
+                per_page: 20
+            });
+
+            if (searchTerm) params.append('search', searchTerm);
+            if (cityFilter) params.append('city', cityFilter);
+
+            try {
+                const response = await fetch(`/api/v1/admin/attractions?${params}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                renderAttractions(data);
+            } catch (error) {
+                console.error('Error loading attractions:', error);
+                document.getElementById('attractionsList').innerHTML = `
+                    <div class="error">
+                        Failed to load attractions: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Render attractions list
+        function renderAttractions(data) {
+            const list = document.getElementById('attractionsList');
+            const pagination = document.getElementById('pagination');
+
+            if (!data.attractions || data.attractions.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <h3>No attractions found</h3>
+                        <p>Try adjusting your search filters</p>
+                    </div>
+                `;
+                pagination.style.display = 'none';
+                return;
+            }
+
+            list.innerHTML = data.attractions.map(attraction => `
+                <div class="attraction-item" id="attraction-${attraction.id}">
+                    <div class="attraction-header" onclick="toggleAttraction(${attraction.id})">
+                        <div class="attraction-info">
+                            <div class="attraction-name">${escapeHtml(attraction.name)}</div>
+                            <div class="attraction-location">
+                                ${escapeHtml(attraction.city)}${attraction.country ? ', ' + escapeHtml(attraction.country) : ''}
+                            </div>
+                            <div class="attraction-stats">
+                                ${attraction.has_data.hero_images > 0 ? `<span class="stat has-data">📸 ${attraction.has_data.hero_images} images</span>` : ''}
+                                ${attraction.has_data.reviews > 0 ? `<span class="stat has-data">⭐ ${attraction.has_data.reviews} reviews</span>` : ''}
+                                ${attraction.has_data.best_time > 0 ? `<span class="stat has-data">📅 ${attraction.has_data.best_time} days</span>` : ''}
+                                ${attraction.has_data.weather > 0 ? `<span class="stat has-data">🌤️ ${attraction.has_data.weather} forecasts</span>` : ''}
+                                ${attraction.has_data.tips > 0 ? `<span class="stat has-data">💡 ${attraction.has_data.tips} tips</span>` : ''}
+                                ${attraction.has_data.social_videos > 0 ? `<span class="stat has-data">🎥 ${attraction.has_data.social_videos} videos</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="expand-icon">▶</div>
+                    </div>
+                    <div class="attraction-data">
+                        <!-- Data will be loaded here when expanded -->
+                    </div>
+                </div>
+            `).join('');
+
+            // Update pagination
+            currentPage = data.pagination.page;
+            totalPages = data.pagination.pages;
+            document.getElementById('currentPage').textContent = currentPage;
+            document.getElementById('totalPages').textContent = totalPages;
+            document.getElementById('totalAttractions').textContent = data.pagination.total;
+            document.getElementById('prevBtn').disabled = currentPage <= 1;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+            pagination.style.display = 'flex';
+        }
+
+        // Toggle attraction expansion
+        async function toggleAttraction(attractionId) {
+            const item = document.getElementById(`attraction-${attractionId}`);
+            const dataContainer = item.querySelector('.attraction-data');
+
+            if (item.classList.contains('expanded')) {
+                item.classList.remove('expanded');
+                return;
+            }
+
+            item.classList.add('expanded');
+
+            // Load data if not already loaded
+            if (!dataContainer.dataset.loaded) {
+                await loadAttractionData(attractionId, dataContainer);
+            }
+        }
+
+        // Load detailed attraction data
+        async function loadAttractionData(attractionId, container) {
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading data...</p></div>';
+
+            try {
+                const response = await fetch(`/api/v1/admin/attractions/${attractionId}/data`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Format JSON with 2-space indentation
+                const jsonString = JSON.stringify(data, null, 2);
+
+                container.innerHTML = `
+                    <div class="data-actions">
+                        <button class="copy-btn" onclick="copyJson(${attractionId})">📋 Copy JSON</button>
+                    </div>
+                    <div class="json-container">
+                        <pre><code class="language-json" id="json-${attractionId}">${escapeHtml(jsonString)}</code></pre>
+                    </div>
+                `;
+
+                // Apply syntax highlighting
+                Prism.highlightElement(document.getElementById(`json-${attractionId}`));
+
+                container.dataset.loaded = 'true';
+                container.dataset.json = jsonString;
+            } catch (error) {
+                console.error('Error loading attraction data:', error);
+                container.innerHTML = `
+                    <div class="error">
+                        Failed to load data: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Copy JSON to clipboard
+        function copyJson(attractionId) {
+            const item = document.getElementById(`attraction-${attractionId}`);
+            const dataContainer = item.querySelector('.attraction-data');
+            const jsonString = dataContainer.dataset.json;
+
+            navigator.clipboard.writeText(jsonString).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Filter functions
+        function applyFilters() {
+            currentPage = 1;
+            loadAttractions();
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadAttractions();
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadAttractions();
+            }
+        }
+
+        // Load cities for filter dropdown
+        async function loadCities() {
+            try {
+                const response = await fetch('/api/v1/cities');
+
+                if (response.ok) {
+                    const cities = await response.json();
+                    const select = document.getElementById('cityFilter');
+                    cities.forEach(city => {
+                        const option = document.createElement('option');
+                        option.value = city.slug;
+                        option.textContent = city.name;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading cities:', error);
+            }
+        }
+
+        // HTML escape utility
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Enter key support for search
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    applyFilters();
+                }
+            });
+
+            // Load initial data
+            loadCities();
+            loadAttractions();
+        });
+    </script>
+</body>
+</html>
