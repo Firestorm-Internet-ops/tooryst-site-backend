@@ -55,17 +55,7 @@ def create_app() -> FastAPI:
     # Allow common development ports and local network access
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-            "http://localhost:3001",
-            "http://127.0.0.1:3001",
-            "http://localhost:3002",
-            "http://127.0.0.1:3002",
-            "http://10.80.121.45:3000",
-            "http://10.80.121.45:3001",
-            "http://10.80.121.45:3002",
-        ],
+        allow_origins=["https://tooryst.co", "https://www.tooryst.co"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
