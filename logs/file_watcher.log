@@ -1,0 +1,4 @@
+Notifications enabled but no channels configured
+2025-12-23 13:29:53,089 - __main__ - INFO - ✓ File watcher connected to Redis for global debounce
+2025-12-23 13:29:53,090 - __main__ - INFO - Starting file watcher on /Users/deepak/Desktop/storyboard/backend/data for attractions.xlsx
+2025-12-23 13:29:53,090 - __main__ - INFO - Debounce window: 1.0 seconds

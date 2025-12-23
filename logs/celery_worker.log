@@ -1,0 +1,343 @@
+Notifications enabled but no channels configured
+ 
+ -------------- main@Deepaks-MacBook-Air.local v5.3.6 (emerald-rush)
+--- ***** ----- 
+-- ******* ---- macOS-26.2-arm64-arm-64bit-Mach-O 2025-12-23 13:29:54
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         storyboard:0x10ad81010
+- ** ---------- .> transport:   redis://localhost:6379/0
+- ** ---------- .> results:     redis://localhost:6379/1
+- *** --- * --- .> concurrency: 4 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                .> pipeline         exchange=pipeline(direct) key=pipeline
+
+[tasks]
+  . app.tasks.data_reporting.get_attraction_data_report
+  . app.tasks.data_reporting.get_pipeline_data_report
+  . app.tasks.file_watcher_tasks.process_excel_update
+  . app.tasks.nearby_attractions_tasks.backfill_nearby_attractions
+  . app.tasks.nearby_attractions_tasks.enrich_nearby_attraction_from_google
+  . app.tasks.nearby_attractions_tasks.refresh_all_nearby_attractions
+  . app.tasks.nearby_attractions_tasks.update_nearby_attractions_for_attraction
+  . app.tasks.nearby_attractions_tasks.update_nearby_attractions_for_city
+  . app.tasks.parallel_pipeline_tasks.orchestrate_pipeline
+  . app.tasks.parallel_pipeline_tasks.process_stage_audiences
+  . app.tasks.parallel_pipeline_tasks.process_stage_best_time
+  . app.tasks.parallel_pipeline_tasks.process_stage_hero_images
+  . app.tasks.parallel_pipeline_tasks.process_stage_map
+  . app.tasks.parallel_pipeline_tasks.process_stage_metadata
+  . app.tasks.parallel_pipeline_tasks.process_stage_nearby
+  . app.tasks.parallel_pipeline_tasks.process_stage_reviews
+  . app.tasks.parallel_pipeline_tasks.process_stage_social_videos
+  . app.tasks.parallel_pipeline_tasks.process_stage_tips
+  . app.tasks.parallel_pipeline_tasks.process_stage_weather
+  . app.tasks.pipeline_cleanup.check_and_cleanup_pipeline
+  . app.tasks.pipeline_cleanup.force_cleanup_pipeline
+  . app.tasks.pipeline_resume.get_pipeline_status
+  . app.tasks.pipeline_resume.resume_pipeline
+  . app.tasks.pipeline_tasks.run_full_pipeline
+  . app.tasks.pipeline_tasks.run_pipeline_for_attractions
+  . app.tasks.reddit_tip_fetcher_task.fetch_reddit_tips_batch
+  . app.tasks.reddit_tip_fetcher_task.resume_rate_limited_runs
+  . app.tasks.refresh_tasks.refresh_best_time_data
+  . app.tasks.refresh_tasks.refresh_visitor_info
+  . app.tasks.refresh_tasks.refresh_weather_data
+  . app.tasks.youtube_retry_tasks.fetch_missing_youtube_videos
+
+[2025-12-23 13:29:54,817: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2025-12-23 13:29:54,819: INFO/MainProcess] mingle: searching for neighbors
+[2025-12-23 13:29:55,823: INFO/MainProcess] mingle: all alone
+[2025-12-23 13:29:55,832: INFO/MainProcess] main@Deepaks-MacBook-Air.local ready.
+[2025-12-23 13:30:00,019: INFO/MainProcess] Task app.tasks.youtube_retry_tasks.fetch_missing_youtube_videos[1181cb76-3e3f-4c6a-abba-3c890bc9abb1] received
+[2025-12-23 13:30:00,027: INFO/ForkPoolWorker-1] Starting YouTube retry task
+[2025-12-23 13:30:00,030: INFO/ForkPoolWorker-1] ================================================================================
+[2025-12-23 13:30:00,030: INFO/ForkPoolWorker-1] YOUTUBE RETRY: Fetching videos for attractions with < 3 videos
+[2025-12-23 13:30:00,030: INFO/ForkPoolWorker-1] ================================================================================
+[2025-12-23 13:30:00,031: INFO/ForkPoolWorker-1] Threshold: 5 videos
+[2025-12-23 13:30:00,031: INFO/ForkPoolWorker-1] Scanning for attractions with < 5 videos...
+[2025-12-23 13:30:00,167: INFO/ForkPoolWorker-1] Found 878 attractions with < 5 videos
+[2025-12-23 13:30:00,172: INFO/ForkPoolWorker-1] Found 905 attractions already in retry queue
+[2025-12-23 13:30:00,173: INFO/ForkPoolWorker-1] Processing 24 attractions not yet in queue
+[2025-12-23 13:30:00,173: INFO/ForkPoolWorker-1] [1/24] Processing: Amsterdam Canal Cruise
+[2025-12-23 13:30:00,173: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Amsterdam Canal Cruise
+[2025-12-23 13:30:00,188: INFO/ForkPoolWorker-1] Redis cache initialized: localhost:6379/2
+[2025-12-23 13:30:00,190: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Amsterdam Canal Cruise Amsterdam travel - using API quota
+[2025-12-23 13:30:00,854: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Amsterdam%20Canal%20Cruise%20Amsterdam%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:00,985: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=-uyavkdJQig%2Co3pfInY0Fq0%2CNsWPx7C6JvE%2Cva2bfcF5a7Y%2CS7Akc0cW6SE%2CX_aZDRIvLTs%2CzCN9gIBbo9A%2C40Bsknde-W0%2CJhq-nD6ot0k%2CR99Sx2VWOz4&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:00,989: INFO/ForkPoolWorker-1] Found 5 YouTube Shorts for query: Amsterdam Canal Cruise Amsterdam travel
+[2025-12-23 13:30:00,991: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Amsterdam Canal Cruise Amsterdam travel
+[2025-12-23 13:30:00,993: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Amsterdam Canal Cruise - using API quota
+[2025-12-23 13:30:01,601: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Amsterdam%20Canal%20Cruise&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:01,701: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=-uyavkdJQig%2Co3pfInY0Fq0%2Cva2bfcF5a7Y%2CX_aZDRIvLTs%2CUdg1OV1M65Y%2CS7Akc0cW6SE%2C6Yp3-geFKRI%2C40Bsknde-W0%2CTV6hSyzsWEg%2CP6xg6DJm6GQ&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:01,704: INFO/ForkPoolWorker-1] Found 6 YouTube Shorts for query: visiting Amsterdam Canal Cruise
+[2025-12-23 13:30:01,705: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Amsterdam Canal Cruise
+[2025-12-23 13:30:01,706: INFO/ForkPoolWorker-1] Only found 7 travel videos, searching for general content
+[2025-12-23 13:30:01,706: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Amsterdam Canal Cruise Amsterdam - using API quota
+[2025-12-23 13:30:02,300: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Amsterdam%20Canal%20Cruise%20Amsterdam&type=video&videoDuration=short&maxResults=3&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:02,516: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=-uyavkdJQig%2C1Lz8YD1uF7k%2Co3pfInY0Fq0%2CNsWPx7C6JvE%2CzCN9gIBbo9A%2CS7Akc0cW6SE%2CiTSUXEYZXTk%2Cy3iURNotLTI%2CPXTgM5_oQFI%2CAvCIL6SOZdk%2C40Bsknde-W0%2CSQGG3FdNSF4%2CGMmPV_3GHW0%2CX_aZDRIvLTs%2CjqWrs5qMxHA%2C0cIjK9WLsso%2CJhq-nD6ot0k%2CDtJENlZPj-U%2CD_QDXiVVzTQ%2CARuzPpskCCw%2CItnX7SW0vYw%2C4qMkQFwi6XY%2Cb7_ih89Ebu8%2CR99Sx2VWOz4%2Cefzz748jjEQ&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:02,522: INFO/ForkPoolWorker-1] Found 15 YouTube Shorts for query: Amsterdam Canal Cruise Amsterdam
+[2025-12-23 13:30:02,523: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Amsterdam Canal Cruise Amsterdam
+[2025-12-23 13:30:02,524: INFO/ForkPoolWorker-1] Found 10 YouTube Shorts for Amsterdam Canal Cruise
+[2025-12-23 13:30:02,547: INFO/ForkPoolWorker-1] ✓ Stored 10 social videos
+[2025-12-23 13:30:02,548: INFO/ForkPoolWorker-1]   ✓ Stored 10 videos
+[2025-12-23 13:30:03,556: INFO/ForkPoolWorker-1] [2/24] Processing: Amsterdam Dungeon
+[2025-12-23 13:30:03,559: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Amsterdam Dungeon
+[2025-12-23 13:30:03,561: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Amsterdam Dungeon Amsterdam travel - using API quota
+[2025-12-23 13:30:04,161: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Amsterdam%20Dungeon%20Amsterdam%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:04,277: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=NV1tLlj_W08%2Cjf8uEzpduW8%2Cva2bfcF5a7Y%2CXbWjgTPUcps%2CC0W502HksBU%2CPf7k24AERRE%2CRpcy_uejItY%2CF0v8tf9O1kY%2C_v151Hk2c10%2CpwgBxe8aWYs&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:04,281: INFO/ForkPoolWorker-1] Found 6 YouTube Shorts for query: Amsterdam Dungeon Amsterdam travel
+[2025-12-23 13:30:04,282: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Amsterdam Dungeon Amsterdam travel
+[2025-12-23 13:30:04,284: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Amsterdam Dungeon - using API quota
+[2025-12-23 13:30:04,841: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Amsterdam%20Dungeon&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:04,949: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=jf8uEzpduW8%2CPf7k24AERRE%2Cva2bfcF5a7Y%2CNV1tLlj_W08%2CF0v8tf9O1kY%2ChLU38bAQo_c%2CRpcy_uejItY%2CxGSEKx9Bn04%2CP6xg6DJm6GQ%2CXbWjgTPUcps&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:04,951: INFO/ForkPoolWorker-1] Found 8 YouTube Shorts for query: visiting Amsterdam Dungeon
+[2025-12-23 13:30:04,954: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Amsterdam Dungeon
+[2025-12-23 13:30:04,955: INFO/ForkPoolWorker-1] Only found 9 travel videos, searching for general content
+[2025-12-23 13:30:04,956: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Amsterdam Dungeon Amsterdam - using API quota
+[2025-12-23 13:30:05,485: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Amsterdam%20Dungeon%20Amsterdam&type=video&videoDuration=short&maxResults=1&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:05,558: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=jf8uEzpduW8&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:05,561: INFO/ForkPoolWorker-1] Found 0 YouTube Shorts for query: Amsterdam Dungeon Amsterdam
+[2025-12-23 13:30:05,562: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Amsterdam Dungeon Amsterdam
+[2025-12-23 13:30:05,563: INFO/ForkPoolWorker-1] Found 9 YouTube Shorts for Amsterdam Dungeon
+[2025-12-23 13:30:05,572: INFO/ForkPoolWorker-1] ✓ Stored 9 social videos
+[2025-12-23 13:30:05,573: INFO/ForkPoolWorker-1]   ✓ Stored 9 videos
+[2025-12-23 13:30:06,578: INFO/ForkPoolWorker-1] [3/24] Processing: Amsterdam Royal Palace
+[2025-12-23 13:30:06,578: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Amsterdam Royal Palace
+[2025-12-23 13:30:06,579: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Amsterdam Royal Palace Amsterdam travel - using API quota
+[2025-12-23 13:30:07,214: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Amsterdam%20Royal%20Palace%20Amsterdam%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:07,334: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=FIXKmmLKL44%2CqE7ngO8ErBs%2Csy9aWSiwoOc%2CMqKHszIXtp8%2CsBGyvMcZmBg%2CuIUvP_akSRc%2CGWejBxodomg%2CYLaniEbbego%2C0KOCfQKJ0LI%2CbUUb3hKF5IE&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:07,337: INFO/ForkPoolWorker-1] Found 6 YouTube Shorts for query: Amsterdam Royal Palace Amsterdam travel
+[2025-12-23 13:30:07,338: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Amsterdam Royal Palace Amsterdam travel
+[2025-12-23 13:30:07,339: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Amsterdam Royal Palace - using API quota
+[2025-12-23 13:30:07,925: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Amsterdam%20Royal%20Palace&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:08,029: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=FIXKmmLKL44%2CqE7ngO8ErBs%2Cr5MKg1cp-mE%2CMqKHszIXtp8%2CGWejBxodomg%2CcUq0D2vgeEk%2CuIUvP_akSRc%2CsBGyvMcZmBg%2C-8BueF871cU%2CXU2SxkofjJA&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:08,031: INFO/ForkPoolWorker-1] Found 7 YouTube Shorts for query: visiting Amsterdam Royal Palace
+[2025-12-23 13:30:08,031: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Amsterdam Royal Palace
+[2025-12-23 13:30:08,032: INFO/ForkPoolWorker-1] Found 10 YouTube Shorts for Amsterdam Royal Palace
+[2025-12-23 13:30:08,036: INFO/ForkPoolWorker-1] ✓ Stored 10 social videos
+[2025-12-23 13:30:08,037: INFO/ForkPoolWorker-1]   ✓ Stored 10 videos
+[2025-12-23 13:30:09,038: INFO/ForkPoolWorker-1] [4/24] Processing: Amsterdam Zoo
+[2025-12-23 13:30:09,039: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Amsterdam Zoo
+[2025-12-23 13:30:09,039: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Amsterdam Zoo Amsterdam travel - using API quota
+[2025-12-23 13:30:09,646: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Amsterdam%20Zoo%20Amsterdam%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:09,772: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=03Tr6eTQ_no%2CI2mOA6yzX9g%2C9SYLAuFuRWg%2CcMPwXK2HvDI%2C9kDENQM3Qic%2CBB40jPZUPK4%2CrMeX1A3FKRo%2CHCEjBFFAso8%2ColWo52hU-1A%2C4SbRzaQ0jiM&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:09,774: INFO/ForkPoolWorker-1] Found 5 YouTube Shorts for query: Amsterdam Zoo Amsterdam travel
+[2025-12-23 13:30:09,797: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Amsterdam Zoo Amsterdam travel
+[2025-12-23 13:30:09,798: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Amsterdam Zoo - using API quota
+[2025-12-23 13:30:10,348: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Amsterdam%20Zoo&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:10,466: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=03Tr6eTQ_no%2CcMPwXK2HvDI%2C9kDENQM3Qic%2CrMeX1A3FKRo%2CHCEjBFFAso8%2CI2mOA6yzX9g%2C4SbRzaQ0jiM%2CKWtVDmj8Wuo%2C9SYLAuFuRWg%2C6vZC56lZlYw&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:10,469: INFO/ForkPoolWorker-1] Found 5 YouTube Shorts for query: visiting Amsterdam Zoo
+[2025-12-23 13:30:10,470: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Amsterdam Zoo
+[2025-12-23 13:30:10,471: INFO/ForkPoolWorker-1] Only found 6 travel videos, searching for general content
+[2025-12-23 13:30:10,472: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Amsterdam Zoo Amsterdam - using API quota
+[2025-12-23 13:30:10,831: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Amsterdam%20Zoo%20Amsterdam&type=video&videoDuration=short&maxResults=4&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:10,924: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=9kDENQM3Qic%2C03Tr6eTQ_no%2Cqvv3yTdUCaQ%2CmtfSHU82mqU&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:10,925: INFO/ForkPoolWorker-1] Found 1 YouTube Shorts for query: Amsterdam Zoo Amsterdam
+[2025-12-23 13:30:10,925: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Amsterdam Zoo Amsterdam
+[2025-12-23 13:30:10,925: INFO/ForkPoolWorker-1] Found 7 YouTube Shorts for Amsterdam Zoo
+[2025-12-23 13:30:10,931: INFO/ForkPoolWorker-1] ✓ Stored 7 social videos
+[2025-12-23 13:30:10,931: INFO/ForkPoolWorker-1]   ✓ Stored 7 videos
+[2025-12-23 13:30:11,934: INFO/ForkPoolWorker-1] [5/24] Processing: Body Worlds
+[2025-12-23 13:30:11,935: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Body Worlds
+[2025-12-23 13:30:11,936: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Body Worlds Amsterdam travel - using API quota
+[2025-12-23 13:30:12,525: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Body%20Worlds%20Amsterdam%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:12,661: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=sm395Y7uyHw%2CeR_78PXOEaY%2CtczQCKLO1Es%2CeBc8rq-gkfw%2CtA5OUc_Rseo%2CC0AMWfkgN7Q%2CZ8HUv-5zJSQ%2CySJMhhjd7GI%2CmHq2TquPjjQ%2CWqSIg3GfmVE&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:12,664: INFO/ForkPoolWorker-1] Found 7 YouTube Shorts for query: Body Worlds Amsterdam travel
+[2025-12-23 13:30:12,666: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Body Worlds Amsterdam travel
+[2025-12-23 13:30:12,668: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Body Worlds - using API quota
+[2025-12-23 13:30:13,325: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Body%20Worlds&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:13,433: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=sm395Y7uyHw%2CIkuI7PZWhxA%2CpWzm1E1ngTw%2Cl9CGvJOtb1c%2Cp1ZEmhMBF0I%2CCDT0Z6d5h3o%2CthHsmKLGbhQ%2ClRZFenwTTgg%2COFpaTFKjHoA%2CWbj42yI3DWY&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:13,435: INFO/ForkPoolWorker-1] Found 4 YouTube Shorts for query: visiting Body Worlds
+[2025-12-23 13:30:13,436: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Body Worlds
+[2025-12-23 13:30:13,436: INFO/ForkPoolWorker-1] Found 10 YouTube Shorts for Body Worlds
+[2025-12-23 13:30:13,442: INFO/ForkPoolWorker-1] ✓ Stored 10 social videos
+[2025-12-23 13:30:13,443: INFO/ForkPoolWorker-1]   ✓ Stored 10 videos
+[2025-12-23 13:30:14,446: INFO/ForkPoolWorker-1] [6/24] Processing: Diamond Museum
+[2025-12-23 13:30:14,446: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Diamond Museum
+[2025-12-23 13:30:14,447: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Diamond Museum Amsterdam travel - using API quota
+[2025-12-23 13:30:15,105: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Diamond%20Museum%20Amsterdam%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:15,196: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=G6B0v-Znv8I%2CIcEAyiOR6b8%2CCoGdO1ro5_8%2CzN1WRwQ2v6c%2CzcJ8ZYoYNb4%2CCjiQ4AkBO94%2CUbWwR2HvVpg%2CCCYS5afj85U%2CHfGnejabpuw%2C3046Tf7dyQM&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:15,199: INFO/ForkPoolWorker-1] Found 2 YouTube Shorts for query: Diamond Museum Amsterdam travel
+[2025-12-23 13:30:15,201: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Diamond Museum Amsterdam travel
+[2025-12-23 13:30:15,202: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Diamond Museum - using API quota
+[2025-12-23 13:30:15,515: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Diamond%20Museum&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:15,607: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=G6B0v-Znv8I%2CsfMUUP8P5ys%2CtgN30OThMLo%2CzcJ8ZYoYNb4%2CCoGdO1ro5_8%2CMYW5DTwq3Nk%2CYQ1Dcrt_DGU%2C8AG-U7mNrr4%2CwDjzPFICdB8%2C7T6bj1Oluwg&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:15,610: INFO/ForkPoolWorker-1] Found 7 YouTube Shorts for query: visiting Diamond Museum
+[2025-12-23 13:30:15,612: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Diamond Museum
+[2025-12-23 13:30:15,613: INFO/ForkPoolWorker-1] Only found 8 travel videos, searching for general content
+[2025-12-23 13:30:15,615: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Diamond Museum Amsterdam - using API quota
+[2025-12-23 13:30:16,157: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Diamond%20Museum%20Amsterdam&type=video&videoDuration=short&maxResults=2&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:16,228: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=G6B0v-Znv8I%2CzN1WRwQ2v6c&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:16,229: INFO/ForkPoolWorker-1] Found 2 YouTube Shorts for query: Diamond Museum Amsterdam
+[2025-12-23 13:30:16,231: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Diamond Museum Amsterdam
+[2025-12-23 13:30:16,231: INFO/ForkPoolWorker-1] Found 8 YouTube Shorts for Diamond Museum
+[2025-12-23 13:30:16,239: INFO/ForkPoolWorker-1] ✓ Stored 8 social videos
+[2025-12-23 13:30:16,240: INFO/ForkPoolWorker-1]   ✓ Stored 8 videos
+[2025-12-23 13:30:17,244: INFO/ForkPoolWorker-1] [7/24] Processing: Eye Film Museum
+[2025-12-23 13:30:17,245: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Eye Film Museum
+[2025-12-23 13:30:17,246: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Eye Film Museum Amsterdam travel - using API quota
+[2025-12-23 13:30:17,847: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Eye%20Film%20Museum%20Amsterdam%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:17,963: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=JRAxaRX0mpA%2CaiVEubLnMUc%2CBVtZV0Ntf3w%2C75P2sfdcKvk%2CNXVYXOxJwtc%2C4JfEEaJRGic%2C9D16qOfxCnA%2C-lne_k-UmnA%2CtgAtMCPYBHc%2C4_VEi89xK-o&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:17,964: INFO/ForkPoolWorker-1] Found 5 YouTube Shorts for query: Eye Film Museum Amsterdam travel
+[2025-12-23 13:30:17,965: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Eye Film Museum Amsterdam travel
+[2025-12-23 13:30:17,965: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Eye Film Museum - using API quota
+[2025-12-23 13:30:18,544: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Eye%20Film%20Museum&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:18,646: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=pFrBIXQOTw4%2C4JfEEaJRGic%2Cj02DxjuexC0%2CJRAxaRX0mpA%2CMChw-2tPpAg%2Cu5MnX5jg3vg%2C9D16qOfxCnA%2CVb7QuTCQKgY%2CXIIyCuPQAds%2CcI40c80D6Bs&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:18,649: INFO/ForkPoolWorker-1] Found 6 YouTube Shorts for query: visiting Eye Film Museum
+[2025-12-23 13:30:18,650: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Eye Film Museum
+[2025-12-23 13:30:18,651: INFO/ForkPoolWorker-1] Only found 9 travel videos, searching for general content
+[2025-12-23 13:30:18,652: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Eye Film Museum Amsterdam - using API quota
+[2025-12-23 13:30:19,256: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Eye%20Film%20Museum%20Amsterdam&type=video&videoDuration=short&maxResults=1&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:19,326: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=9D16qOfxCnA&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:19,327: INFO/ForkPoolWorker-1] Found 0 YouTube Shorts for query: Eye Film Museum Amsterdam
+[2025-12-23 13:30:19,328: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Eye Film Museum Amsterdam
+[2025-12-23 13:30:19,328: INFO/ForkPoolWorker-1] Found 9 YouTube Shorts for Eye Film Museum
+[2025-12-23 13:30:19,332: INFO/ForkPoolWorker-1] ✓ Stored 9 social videos
+[2025-12-23 13:30:19,333: INFO/ForkPoolWorker-1]   ✓ Stored 9 videos
+[2025-12-23 13:30:20,335: INFO/ForkPoolWorker-1] [8/24] Processing: House of Bols
+[2025-12-23 13:30:20,336: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for House of Bols
+[2025-12-23 13:30:20,338: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: House of Bols Amsterdam travel - using API quota
+[2025-12-23 13:30:20,874: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=House%20of%20Bols%20Amsterdam%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:20,985: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=RmSpW9kapXU%2ClG1CWaL9y30%2ChskSyQOvZyc%2CZx-pkf1yOKM%2CgTLVhK2rvlI%2CTZteE59ekj0%2CD99ajVeVthw%2CGxo_M8HTfZE%2Cqii2BhnfHqI%2CLGGC0YdknlQ&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:20,989: INFO/ForkPoolWorker-1] Found 4 YouTube Shorts for query: House of Bols Amsterdam travel
+[2025-12-23 13:30:20,990: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: House of Bols Amsterdam travel
+[2025-12-23 13:30:20,992: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting House of Bols - using API quota
+[2025-12-23 13:30:21,808: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20House%20of%20Bols&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:21,961: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=hskSyQOvZyc%2CTZteE59ekj0%2CZx-pkf1yOKM%2Cgfg1KPrgRB4%2CgTLVhK2rvlI%2Ck5Z5ydNrh0s%2CdMvLdyN8xq0%2Ch-7fw1HGDPo%2ClG1CWaL9y30%2CPnfZciSufzM%2Co6_K5HwzG0o%2CPdwvtCOddPY%2Cl3EB6Zl01bE%2CD99ajVeVthw%2Cfyuaj8FNCFQ%2CBfSRPnP2QN0%2CUZf20BDh-lA%2CWOIXvRsHh78%2Cx5NCji7mAOY%2CYenLjr95Ugk%2CgwherYXmncs%2CevnBuG7vE6A%2CLGGC0YdknlQ%2C25E63rfCmz8%2CrmSQwjgWKzA&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:21,965: INFO/ForkPoolWorker-1] Found 14 YouTube Shorts for query: visiting House of Bols
+[2025-12-23 13:30:21,967: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting House of Bols
+[2025-12-23 13:30:21,969: INFO/ForkPoolWorker-1] Found 10 YouTube Shorts for House of Bols
+[2025-12-23 13:30:21,978: INFO/ForkPoolWorker-1] ✓ Stored 10 social videos
+[2025-12-23 13:30:21,980: INFO/ForkPoolWorker-1]   ✓ Stored 10 videos
+[2025-12-23 13:30:22,984: INFO/ForkPoolWorker-1] [9/24] Processing: Johan Cruyff Arena
+[2025-12-23 13:30:22,985: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Johan Cruyff Arena
+[2025-12-23 13:30:22,986: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Johan Cruyff Arena Amsterdam travel - using API quota
+[2025-12-23 13:30:23,569: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Johan%20Cruyff%20Arena%20Amsterdam%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:23,665: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=bFer6CN5jMY%2CpTSTb8eR4wY%2CYMx8tIgyxgI%2ClAi4LfgKeVE%2CiODB0SAJuiA%2CNYOLCoSy90M%2CKTbKjB7VK7E%2Cu7reyBzv4Ho%2CI5Tt0cFD5ak%2C1gqfd_sKPps&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:23,667: INFO/ForkPoolWorker-1] Found 6 YouTube Shorts for query: Johan Cruyff Arena Amsterdam travel
+[2025-12-23 13:30:23,667: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Johan Cruyff Arena Amsterdam travel
+[2025-12-23 13:30:23,668: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Johan Cruyff Arena - using API quota
+[2025-12-23 13:30:23,979: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Johan%20Cruyff%20Arena&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:24,078: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=H5IJhD7O7zg%2Cd9VDOzo-574%2C1BBj1aFDjow%2CiwK_9ckJEjg%2CqHcO2YuTZO4%2CpTSTb8eR4wY%2CX3VdVWg2Cyw%2CrMDpGDQF6rg%2CdqszRqa11Q8%2CXmJXx6Tn9qU&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:24,081: INFO/ForkPoolWorker-1] Found 5 YouTube Shorts for query: visiting Johan Cruyff Arena
+[2025-12-23 13:30:24,082: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Johan Cruyff Arena
+[2025-12-23 13:30:24,083: INFO/ForkPoolWorker-1] Found 10 YouTube Shorts for Johan Cruyff Arena
+[2025-12-23 13:30:24,093: INFO/ForkPoolWorker-1] ✓ Stored 10 social videos
+[2025-12-23 13:30:24,094: INFO/ForkPoolWorker-1]   ✓ Stored 10 videos
+[2025-12-23 13:30:25,099: INFO/ForkPoolWorker-1] [10/24] Processing: Keukenhof Castle
+[2025-12-23 13:30:25,099: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Keukenhof Castle
+[2025-12-23 13:30:25,100: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Keukenhof Castle Amsterdam travel - using API quota
+[2025-12-23 13:30:25,669: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Keukenhof%20Castle%20Amsterdam%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:25,778: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=GVCBXHx34zE%2CH0W2IfA5KhQ%2CNbYw8XPQfDQ%2CWcoKXaPdfqk%2ClFSMUq6urks%2CifhOBbzNUqI%2CsLTfG6oBYqA%2C8EI-ckJyM3k%2CwrLFc_V-RVg%2ClAtksBHomfc&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:25,781: INFO/ForkPoolWorker-1] Found 3 YouTube Shorts for query: Keukenhof Castle Amsterdam travel
+[2025-12-23 13:30:25,783: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Keukenhof Castle Amsterdam travel
+[2025-12-23 13:30:25,784: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Keukenhof Castle - using API quota
+[2025-12-23 13:30:26,324: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Keukenhof%20Castle&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:26,430: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=sLTfG6oBYqA%2CGVCBXHx34zE%2CH0W2IfA5KhQ%2CC9r-6T40fJ4%2Cya5pIncwdq8%2CN5wet_pC4rk%2Cd_9Cy7GUZq8%2CkBC3zouTVpY%2ClFSMUq6urks%2CYGYSXsW6uhw&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:26,433: INFO/ForkPoolWorker-1] Found 4 YouTube Shorts for query: visiting Keukenhof Castle
+[2025-12-23 13:30:26,434: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Keukenhof Castle
+[2025-12-23 13:30:26,434: INFO/ForkPoolWorker-1] Only found 6 travel videos, searching for general content
+[2025-12-23 13:30:26,435: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Keukenhof Castle Amsterdam - using API quota
+[2025-12-23 13:30:26,762: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Keukenhof%20Castle%20Amsterdam&type=video&videoDuration=short&maxResults=4&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:26,849: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=GVCBXHx34zE%2CH0W2IfA5KhQ%2CNbYw8XPQfDQ%2CC9r-6T40fJ4&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:26,851: INFO/ForkPoolWorker-1] Found 0 YouTube Shorts for query: Keukenhof Castle Amsterdam
+[2025-12-23 13:30:26,852: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Keukenhof Castle Amsterdam
+[2025-12-23 13:30:26,853: INFO/ForkPoolWorker-1] Found 6 YouTube Shorts for Keukenhof Castle
+[2025-12-23 13:30:26,858: INFO/ForkPoolWorker-1] ✓ Stored 6 social videos
+[2025-12-23 13:30:26,858: INFO/ForkPoolWorker-1]   ✓ Stored 6 videos
+[2025-12-23 13:30:27,862: INFO/ForkPoolWorker-1] [11/24] Processing: Keukenhof Gardens
+[2025-12-23 13:30:27,862: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Keukenhof Gardens
+[2025-12-23 13:30:27,864: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Keukenhof Gardens Amsterdam travel - using API quota
+[2025-12-23 13:30:28,452: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Keukenhof%20Gardens%20Amsterdam%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:28,556: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=EnnurXLooZw%2CWcoKXaPdfqk%2ClFSMUq6urks%2CaibHHcKhpgs%2Cc-bJDXgyZRE%2CdnfY_sBKU3o%2Ci0o98op1sB8%2CPPGmRAhMKvQ%2Cp0Yv_eGvmU4%2Cu9om0cxCIpc&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:28,559: INFO/ForkPoolWorker-1] Found 6 YouTube Shorts for query: Keukenhof Gardens Amsterdam travel
+[2025-12-23 13:30:28,560: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Keukenhof Gardens Amsterdam travel
+[2025-12-23 13:30:28,561: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Keukenhof Gardens - using API quota
+[2025-12-23 13:30:29,164: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Keukenhof%20Gardens&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:29,271: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=-Tw661XtkZ4%2CaibHHcKhpgs%2CoDVtDrDt05s%2CbtBZ8mUlEHE%2CEnnurXLooZw%2CA4nifrXo0I0%2CV6k_lnNkeuU%2CDftFhH277-0%2Co071lGvYx2E%2CVGR4Y9rqwRg&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:29,272: INFO/ForkPoolWorker-1] Found 4 YouTube Shorts for query: visiting Keukenhof Gardens
+[2025-12-23 13:30:29,273: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Keukenhof Gardens
+[2025-12-23 13:30:29,273: INFO/ForkPoolWorker-1] Only found 9 travel videos, searching for general content
+[2025-12-23 13:30:29,274: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Keukenhof Gardens Amsterdam - using API quota
+[2025-12-23 13:30:29,759: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Keukenhof%20Gardens%20Amsterdam&type=video&videoDuration=short&maxResults=1&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:29,821: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=EnnurXLooZw&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:29,823: INFO/ForkPoolWorker-1] Found 0 YouTube Shorts for query: Keukenhof Gardens Amsterdam
+[2025-12-23 13:30:29,824: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Keukenhof Gardens Amsterdam
+[2025-12-23 13:30:29,824: INFO/ForkPoolWorker-1] Found 9 YouTube Shorts for Keukenhof Gardens
+[2025-12-23 13:30:29,832: INFO/ForkPoolWorker-1] ✓ Stored 9 social videos
+[2025-12-23 13:30:29,833: INFO/ForkPoolWorker-1]   ✓ Stored 9 videos
+[2025-12-23 13:30:30,836: INFO/ForkPoolWorker-1] [12/24] Processing: Wat Pho
+[2025-12-23 13:30:30,837: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Wat Pho
+[2025-12-23 13:30:30,838: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Wat Pho Bangkok travel - using API quota
+[2025-12-23 13:30:31,397: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Wat%20Pho%20Bangkok%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:31,524: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=-LUh6koJpio%2CXAoZIvvl-RI%2CKpwJcbKNfkU%2CWgmKwhD8tpk%2CBrL3Ij7ly40%2CJ6FKRBPQpCc%2CAPTd4TEffFU%2CqNolXm0xAMc%2CfDDHYR4aUII%2CYrCbshy2yCE&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:31,528: INFO/ForkPoolWorker-1] Found 9 YouTube Shorts for query: Wat Pho Bangkok travel
+[2025-12-23 13:30:31,529: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Wat Pho Bangkok travel
+[2025-12-23 13:30:31,531: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Wat Pho - using API quota
+[2025-12-23 13:30:32,066: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Wat%20Pho&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:32,170: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=XAoZIvvl-RI%2CNi5oyKLp3mA%2CEYw1Js9jA7M%2C-LUh6koJpio%2CadxSwhW2-M0%2Cpo5hIT3kt8U%2CWgmKwhD8tpk%2Cv--ZVIDnnhU%2CKB9-_3uk-RA%2CbgghJxEADGE&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:32,173: INFO/ForkPoolWorker-1] Found 2 YouTube Shorts for query: visiting Wat Pho
+[2025-12-23 13:30:32,174: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Wat Pho
+[2025-12-23 13:30:32,175: INFO/ForkPoolWorker-1] Only found 9 travel videos, searching for general content
+[2025-12-23 13:30:32,177: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Wat Pho Bangkok - using API quota
+[2025-12-23 13:30:32,495: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Wat%20Pho%20Bangkok&type=video&videoDuration=short&maxResults=1&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:32,567: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=-LUh6koJpio&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:32,567: INFO/ForkPoolWorker-1] Found 1 YouTube Shorts for query: Wat Pho Bangkok
+[2025-12-23 13:30:32,569: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Wat Pho Bangkok
+[2025-12-23 13:30:32,569: INFO/ForkPoolWorker-1] Found 9 YouTube Shorts for Wat Pho
+[2025-12-23 13:30:32,573: INFO/ForkPoolWorker-1] ✓ Stored 9 social videos
+[2025-12-23 13:30:32,574: INFO/ForkPoolWorker-1]   ✓ Stored 9 videos
+[2025-12-23 13:30:33,576: INFO/ForkPoolWorker-1] [13/24] Processing: Damnoen Saduak Floating Market
+[2025-12-23 13:30:33,576: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Damnoen Saduak Floating Market
+[2025-12-23 13:30:33,577: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Damnoen Saduak Floating Market Bangkok travel - using API quota
+[2025-12-23 13:30:33,875: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Damnoen%20Saduak%20Floating%20Market%20Bangkok%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:33,982: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=mwIIuSvu8CE%2C7rUcCdGOt1s%2Cas2Utbywcoo%2CX0Tzo9R4WM0%2C4CHb--xDxcY%2C_AYUWI8kLr0%2C3FHwdMU21QE%2C_b7hc_iuVs0%2C9qAbd73Tujw%2CFa9_zsUW_6E&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:33,986: INFO/ForkPoolWorker-1] Found 5 YouTube Shorts for query: Damnoen Saduak Floating Market Bangkok travel
+[2025-12-23 13:30:33,988: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Damnoen Saduak Floating Market Bangkok travel
+[2025-12-23 13:30:33,989: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Damnoen Saduak Floating Market - using API quota
+[2025-12-23 13:30:34,508: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Damnoen%20Saduak%20Floating%20Market&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:34,593: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=7rUcCdGOt1s%2C4CHb--xDxcY%2C_AYUWI8kLr0%2CmwIIuSvu8CE%2C3FHwdMU21QE%2CX0Tzo9R4WM0%2Cas2Utbywcoo%2C9qAbd73Tujw%2CFa9_zsUW_6E%2Cu7Xyozcqtzw&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:34,596: INFO/ForkPoolWorker-1] Found 6 YouTube Shorts for query: visiting Damnoen Saduak Floating Market
+[2025-12-23 13:30:34,597: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Damnoen Saduak Floating Market
+[2025-12-23 13:30:34,597: INFO/ForkPoolWorker-1] Only found 6 travel videos, searching for general content
+[2025-12-23 13:30:34,598: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Damnoen Saduak Floating Market Bangkok - using API quota
+[2025-12-23 13:30:35,157: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Damnoen%20Saduak%20Floating%20Market%20Bangkok&type=video&videoDuration=short&maxResults=4&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:35,220: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=mwIIuSvu8CE%2C7rUcCdGOt1s%2Cas2Utbywcoo%2C3FHwdMU21QE&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:35,222: INFO/ForkPoolWorker-1] Found 1 YouTube Shorts for query: Damnoen Saduak Floating Market Bangkok
+[2025-12-23 13:30:35,223: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Damnoen Saduak Floating Market Bangkok
+[2025-12-23 13:30:35,224: INFO/ForkPoolWorker-1] Found 6 YouTube Shorts for Damnoen Saduak Floating Market
+[2025-12-23 13:30:35,230: INFO/ForkPoolWorker-1] ✓ Stored 6 social videos
+[2025-12-23 13:30:35,230: INFO/ForkPoolWorker-1]   ✓ Stored 6 videos
+[2025-12-23 13:30:36,234: INFO/ForkPoolWorker-1] [14/24] Processing: Chao Phraya River Cruise
+[2025-12-23 13:30:36,235: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Chao Phraya River Cruise
+[2025-12-23 13:30:36,236: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Chao Phraya River Cruise Bangkok travel - using API quota
+[2025-12-23 13:30:36,591: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Chao%20Phraya%20River%20Cruise%20Bangkok%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:36,702: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=8vwwV39672M%2CSWj-S16JQcc%2Cdl6yV_-fp68%2C3HUKdPagGLk%2C9xMAAtE7Xn4%2CUb00zTxGWBI%2CxjyuWR6LiPg%2Cf7XFZ5jysXM%2C-KB4epTlZFI%2CfQY7SD_e4OI&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:36,705: INFO/ForkPoolWorker-1] Found 6 YouTube Shorts for query: Chao Phraya River Cruise Bangkok travel
+[2025-12-23 13:30:36,707: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Chao Phraya River Cruise Bangkok travel
+[2025-12-23 13:30:36,709: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Chao Phraya River Cruise - using API quota
+[2025-12-23 13:30:37,255: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Chao%20Phraya%20River%20Cruise&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:37,370: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=9xMAAtE7Xn4%2CxjyuWR6LiPg%2CSWj-S16JQcc%2CXa8XCoCgjDk%2C_w8x11zrxEs%2C-KB4epTlZFI%2CUH4yuXYBTF4%2CqrgEwNkE6mc%2CqO1cj63fs2A%2CbBpRfr0kUaw&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:37,373: INFO/ForkPoolWorker-1] Found 5 YouTube Shorts for query: visiting Chao Phraya River Cruise
+[2025-12-23 13:30:37,374: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Chao Phraya River Cruise
+[2025-12-23 13:30:37,375: INFO/ForkPoolWorker-1] Only found 9 travel videos, searching for general content
+[2025-12-23 13:30:37,375: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Chao Phraya River Cruise Bangkok - using API quota
+[2025-12-23 13:30:38,005: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Chao%20Phraya%20River%20Cruise%20Bangkok&type=video&videoDuration=short&maxResults=1&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:38,066: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=8vwwV39672M&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:38,068: INFO/ForkPoolWorker-1] Found 0 YouTube Shorts for query: Chao Phraya River Cruise Bangkok
+[2025-12-23 13:30:38,068: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Chao Phraya River Cruise Bangkok
+[2025-12-23 13:30:38,069: INFO/ForkPoolWorker-1] Found 9 YouTube Shorts for Chao Phraya River Cruise
+[2025-12-23 13:30:38,077: INFO/ForkPoolWorker-1] ✓ Stored 9 social videos
+[2025-12-23 13:30:38,078: INFO/ForkPoolWorker-1]   ✓ Stored 9 videos
+[2025-12-23 13:30:39,080: INFO/ForkPoolWorker-1] [15/24] Processing: Banksy Museum
+[2025-12-23 13:30:39,081: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Banksy Museum
+[2025-12-23 13:30:39,082: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Banksy Museum Barcelona travel - using API quota
+[2025-12-23 13:30:39,733: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Banksy%20Museum%20Barcelona%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:39,837: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=TNVu6-GyIxk%2CtRuSxkQSzpo%2C2DCSxA-xY8I%2CNYUuIgNhi7g%2CsIOvslEsXE0%2CPzZ4lu-uGmc%2CxKmk94vUXqM%2C7O6pFA3rR7w%2C9v-9Ax5vK7o%2C7uR07kP19FA&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:39,839: INFO/ForkPoolWorker-1] Found 7 YouTube Shorts for query: Banksy Museum Barcelona travel
+[2025-12-23 13:30:39,842: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Banksy Museum Barcelona travel
+[2025-12-23 13:30:39,844: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Banksy Museum - using API quota

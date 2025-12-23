@@ -1,0 +1,80 @@
+# Kiro
+.DS_Store
+.kiro
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backend
+backend/logs/
+backend/.pids/
+backend/data/*.xlsx
+backend/data/*.csv
+backend/test_outputs/
+backend/test_*.py
+backend/check_*.py
+backend/example_*.py
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/**/*.pyo
+backend/**/*.pyd
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
+
+# Backend scripts
+backend/scripts/test_*.py
+backend/scripts/check_*.py
+backend/scripts/__pycache__/
+
+# Celery
+celerybeat-schedule*
+backend/celerybeat-schedule*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Node.js / Frontend
+node_modules/
+.next/
+.swc/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Package managers
+.pnpm-store/
+pnpm-lock.yaml
+
+# OS
+Thumbs.db

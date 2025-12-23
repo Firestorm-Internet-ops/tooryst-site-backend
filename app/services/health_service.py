@@ -7,7 +7,8 @@ from enum import Enum
 
 import pymysql
 import redis
-from celery import Celery
+# Temporarily disable Celery import due to compatibility issues
+# from celery import Celery
 
 from app.config import settings
 
@@ -124,7 +125,18 @@ class HealthCheckService:
             Dictionary with status and details
         """
         try:
-            from app.celery_app import celery_app
+            # Try to import celery_app, but handle import errors gracefully
+            try:
+                from app.celery_app import celery_app
+            except ImportError as import_error:
+                logger.warning(f"Celery not available: {import_error}")
+                return {
+                    "status": HealthStatus.UNHEALTHY,
+                    "message": "Celery not available (import error)",
+                    "details": {
+                        "error": str(import_error)
+                    }
+                }
             
             # Get active workers
             celery_timeout = settings.CELERY_INSPECT_TIMEOUT_SECONDS
