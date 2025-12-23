@@ -410,3 +410,11 @@ INFO:     Finished server process [71373]
 INFO:     Started server process [71486]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'app/api/v1/routes/frontend.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [71486]
+INFO:     Started server process [72293]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
