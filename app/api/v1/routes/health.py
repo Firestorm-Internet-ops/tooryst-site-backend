@@ -1,4 +1,4 @@
-"""Health check endpoint."""
+"""Health check endpoints."""
 from fastapi import APIRouter, Response, status
 from typing import Dict, Any
 
@@ -8,9 +8,20 @@ router = APIRouter()
 
 
 @router.get("/health", tags=["health"])
-async def health_check(response: Response) -> Dict[str, Any]:
+async def simple_health_check() -> Dict[str, str]:
     """
-    Check system health status.
+    Simple health check for load balancer - no dependency checks.
+    
+    Returns HTTP 200 OK if the application is running.
+    This endpoint is lightweight and fast for load balancer health checks.
+    """
+    return {"status": "ok"}
+
+
+@router.get("/health/detailed", tags=["health"])
+async def detailed_health_check(response: Response) -> Dict[str, Any]:
+    """
+    Detailed health check with all dependency checks.
     
     Returns HTTP 200 if all components are healthy.
     Returns HTTP 503 if any component is unhealthy.

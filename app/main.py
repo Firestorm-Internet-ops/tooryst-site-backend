@@ -86,12 +86,6 @@ def create_app() -> FastAPI:
 app = create_app()
 
 
-@app.get("/health")
-def health():
-    """Health check endpoint."""
-    return {"status": "ok"}
-
-
 @app.get("/admin/attractions", response_class=HTMLResponse)
 async def admin_attractions_page(request: Request):
     """Admin page for viewing attraction data.
