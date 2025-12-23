@@ -156,7 +156,7 @@ class PaginatedCityResponse(BaseModel):
     items: List[CitySummary]
     total: int
     skip: int = 0
-    limit: int
+    limit: Optional[int] = None
 
 
 @router.get("/cities", response_model=PaginatedCityResponse)
@@ -298,7 +298,7 @@ class PaginatedAttractions(BaseModel):
     items: List[AttractionSummary]
     total: int
     skip: int
-    limit: int
+    limit: Optional[int] = None
 
 
 @router.get("/cities/{city_slug}/attractions", response_model=PaginatedAttractions)
@@ -375,7 +375,7 @@ class PaginatedAttractionResponse(BaseModel):
     items: List[AttractionSummary]
     total: int
     skip: int = 0
-    limit: int
+    limit: Optional[int] = None
 
 
 @router.get("/attractions", response_model=PaginatedAttractionResponse)

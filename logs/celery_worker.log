@@ -341,3 +341,173 @@ Notifications enabled but no channels configured
 [2025-12-23 13:30:39,839: INFO/ForkPoolWorker-1] Found 7 YouTube Shorts for query: Banksy Museum Barcelona travel
 [2025-12-23 13:30:39,842: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Banksy Museum Barcelona travel
 [2025-12-23 13:30:39,844: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Banksy Museum - using API quota
+[2025-12-23 13:30:40,358: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Banksy%20Museum&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:40,457: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=SkXUS-Hz_r8%2Co6Rp2-_59UE%2CVXrZoP7bocU%2CsIcCV83-PcU%2CWBWnnHVyfnE%2C7mxJT2uXtrE%2C7LOHGzGJ6YI%2Cgrqf3W15Knk%2CLqc66T8P5gs%2CbRFopEbeSsk&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:40,460: INFO/ForkPoolWorker-1] Found 5 YouTube Shorts for query: visiting Banksy Museum
+[2025-12-23 13:30:40,461: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Banksy Museum
+[2025-12-23 13:30:40,461: INFO/ForkPoolWorker-1] Found 10 YouTube Shorts for Banksy Museum
+[2025-12-23 13:30:40,466: INFO/ForkPoolWorker-1] ✓ Stored 10 social videos
+[2025-12-23 13:30:40,466: INFO/ForkPoolWorker-1]   ✓ Stored 10 videos
+[2025-12-23 13:30:41,469: INFO/ForkPoolWorker-1] [16/24] Processing: Barcelona Zoo
+[2025-12-23 13:30:41,470: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Barcelona Zoo
+[2025-12-23 13:30:41,471: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Barcelona Zoo Barcelona travel - using API quota
+[2025-12-23 13:30:42,095: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Barcelona%20Zoo%20Barcelona%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:42,209: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=yrBeBtJrkKo%2ClMlOAqTLFCc%2CKznCGjdOLwo%2CBV4gVheanOY%2C6Eemjj8pEgo%2Cf4gtuu2ZzKo%2CpsnEx4kckGw%2C804eWmM-hm8%2CC9YBtGQXePU%2CGqGmYZTzrkY&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:42,212: INFO/ForkPoolWorker-1] Found 6 YouTube Shorts for query: Barcelona Zoo Barcelona travel
+[2025-12-23 13:30:42,213: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Barcelona Zoo Barcelona travel
+[2025-12-23 13:30:42,214: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Barcelona Zoo - using API quota
+[2025-12-23 13:30:42,789: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Barcelona%20Zoo&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:42,920: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=lMlOAqTLFCc%2CcI2faL5QNmU%2CKznCGjdOLwo%2CyrBeBtJrkKo%2Ce_Ee9cVZAEM%2Cf4gtuu2ZzKo%2CC9YBtGQXePU%2C804eWmM-hm8%2CBV4gVheanOY%2CGqGmYZTzrkY&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:42,923: INFO/ForkPoolWorker-1] Found 7 YouTube Shorts for query: visiting Barcelona Zoo
+[2025-12-23 13:30:42,924: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Barcelona Zoo
+[2025-12-23 13:30:42,924: INFO/ForkPoolWorker-1] Only found 7 travel videos, searching for general content
+[2025-12-23 13:30:42,925: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Barcelona Zoo Barcelona - using API quota
+[2025-12-23 13:30:43,496: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Barcelona%20Zoo%20Barcelona&type=video&videoDuration=short&maxResults=3&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:43,575: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=BV4gVheanOY%2CP4_jH7dvJnM%2Cf4gtuu2ZzKo&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:43,576: INFO/ForkPoolWorker-1] Found 3 YouTube Shorts for query: Barcelona Zoo Barcelona
+[2025-12-23 13:30:43,576: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Barcelona Zoo Barcelona
+[2025-12-23 13:30:43,576: INFO/ForkPoolWorker-1] Found 8 YouTube Shorts for Barcelona Zoo
+[2025-12-23 13:30:43,581: INFO/ForkPoolWorker-1] ✓ Stored 8 social videos
+[2025-12-23 13:30:43,581: INFO/ForkPoolWorker-1]   ✓ Stored 8 videos
+[2025-12-23 13:30:44,583: INFO/ForkPoolWorker-1] [17/24] Processing: Dalí Theatre-Museum
+[2025-12-23 13:30:44,585: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Dalí Theatre-Museum
+[2025-12-23 13:30:44,586: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Dalí Theatre-Museum Barcelona travel - using API quota
+[2025-12-23 13:30:45,116: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Dal%C3%AD%20Theatre-Museum%20Barcelona%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:45,232: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=5V2snAa6HpM%2ClWjZNAE1KVU%2CmX9dGZOUEy8%2C9yfrZcNqDAA%2CWQsLCxdDvi8%2Cl4v6hanv9Zs%2CatZTO-SKx2A%2CI-s_mWa6bC4%2CRhhAMgjglzo%2CJKdRPKNU6KY&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:45,235: INFO/ForkPoolWorker-1] Found 5 YouTube Shorts for query: Dalí Theatre-Museum Barcelona travel
+[2025-12-23 13:30:45,236: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Dalí Theatre-Museum Barcelona travel
+[2025-12-23 13:30:45,238: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Dalí Theatre-Museum - using API quota
+[2025-12-23 13:30:45,633: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Dal%C3%AD%20Theatre-Museum&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:45,734: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=5V2snAa6HpM%2CACDL-AFpKzI%2CSaY1gpGt68E%2C78UuyxFGjXY%2Co93fxPzQcUM%2CrP2PyGywwmE%2CyFJ89vWfNjo%2ClWjZNAE1KVU%2CzsrfTEMqqSs%2Cu0PthgMP_rQ&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:45,737: INFO/ForkPoolWorker-1] Found 4 YouTube Shorts for query: visiting Dalí Theatre-Museum
+[2025-12-23 13:30:45,738: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Dalí Theatre-Museum
+[2025-12-23 13:30:45,739: INFO/ForkPoolWorker-1] Only found 8 travel videos, searching for general content
+[2025-12-23 13:30:45,740: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Dalí Theatre-Museum Barcelona - using API quota
+[2025-12-23 13:30:46,256: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Dal%C3%AD%20Theatre-Museum%20Barcelona&type=video&videoDuration=short&maxResults=2&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:46,321: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=5V2snAa6HpM%2ClWjZNAE1KVU&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:46,323: INFO/ForkPoolWorker-1] Found 1 YouTube Shorts for query: Dalí Theatre-Museum Barcelona
+[2025-12-23 13:30:46,324: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Dalí Theatre-Museum Barcelona
+[2025-12-23 13:30:46,325: INFO/ForkPoolWorker-1] Found 8 YouTube Shorts for Dalí Theatre-Museum
+[2025-12-23 13:30:46,331: INFO/ForkPoolWorker-1] ✓ Stored 8 social videos
+[2025-12-23 13:30:46,331: INFO/ForkPoolWorker-1]   ✓ Stored 8 videos
+[2025-12-23 13:30:47,334: INFO/ForkPoolWorker-1] [18/24] Processing: Palau de la Música Catalana
+[2025-12-23 13:30:47,335: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Palau de la Música Catalana
+[2025-12-23 13:30:47,337: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Palau de la Música Catalana Barcelona travel - using API quota
+[2025-12-23 13:30:47,975: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Palau%20de%20la%20M%C3%BAsica%20Catalana%20Barcelona%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:48,090: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=ZyP74Gr9DZE%2C0LdI0-Ii2W0%2CvJEgCIvRWCI%2CUo6szESIbgQ%2CeFbt51mTfkw%2Ce7QGnNdwE8I%2C1X22fSL2uKg%2CfHe5Rrxt-DU%2C01rKL2aXsgk%2CxObCreLIU4E&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:48,093: INFO/ForkPoolWorker-1] Found 8 YouTube Shorts for query: Palau de la Música Catalana Barcelona travel
+[2025-12-23 13:30:48,094: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Palau de la Música Catalana Barcelona travel
+[2025-12-23 13:30:48,095: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Palau de la Música Catalana - using API quota
+[2025-12-23 13:30:48,476: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Palau%20de%20la%20M%C3%BAsica%20Catalana&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:48,589: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=EMifqiRXkss%2CUo6szESIbgQ%2C_aXqCqk_uVo%2CnFlzvLiymUk%2Cs_Vc8Sdk1qs%2CvJEgCIvRWCI%2CZyP74Gr9DZE%2C0LdI0-Ii2W0%2C68iZYzZjBJI%2C4QiXqzWDNsE&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:48,592: INFO/ForkPoolWorker-1] Found 5 YouTube Shorts for query: visiting Palau de la Música Catalana
+[2025-12-23 13:30:48,593: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Palau de la Música Catalana
+[2025-12-23 13:30:48,594: INFO/ForkPoolWorker-1] Found 10 YouTube Shorts for Palau de la Música Catalana
+[2025-12-23 13:30:48,601: INFO/ForkPoolWorker-1] ✓ Stored 10 social videos
+[2025-12-23 13:30:48,602: INFO/ForkPoolWorker-1]   ✓ Stored 10 videos
+[2025-12-23 13:30:49,605: INFO/ForkPoolWorker-1] [19/24] Processing: Park Güell
+[2025-12-23 13:30:49,606: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Park Güell
+[2025-12-23 13:30:49,607: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Park Güell Barcelona travel - using API quota
+[2025-12-23 13:30:49,955: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Park%20G%C3%BCell%20Barcelona%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:50,127: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=Fxab19LjBig%2CR7dPLS_0JBo%2C-IYtVHiF_mE%2CfkkyS7wXSzA%2COkEEy7JM9e0%2C3EVA1U8b0Kc%2CEIHHHz1S1C4%2CO7A_noyuj4o%2Cj8ni8jsf1eM%2CGz4wxQ4Eru0%2CEndkDa4yX40%2CpxT4v-5Ev08%2CPb01GsCI7QQ%2C804eWmM-hm8%2CzItwIaE-sFY%2CPuOD84Ict3A%2CYMO-rr1DnWA%2C98Hl3IWmwyU%2CzMOBtkG7I4Q%2C8XrnNt-4kK0%2CUHdp3OPOlsM%2CEgLqdV2Wq0M%2CHi_K51VvShE%2C0yg1aC363Og%2CxzS28WsTPpc&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:50,139: INFO/ForkPoolWorker-1] Found 20 YouTube Shorts for query: Park Güell Barcelona travel
+[2025-12-23 13:30:50,140: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Park Güell Barcelona travel
+[2025-12-23 13:30:50,140: INFO/ForkPoolWorker-1] Found 10 YouTube Shorts for Park Güell
+[2025-12-23 13:30:50,146: INFO/ForkPoolWorker-1] ✓ Stored 10 social videos
+[2025-12-23 13:30:50,147: INFO/ForkPoolWorker-1]   ✓ Stored 10 videos
+[2025-12-23 13:30:51,149: INFO/ForkPoolWorker-1] [20/24] Processing: Picasso Museum
+[2025-12-23 13:30:51,149: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Picasso Museum
+[2025-12-23 13:30:51,150: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Picasso Museum Barcelona travel - using API quota
+[2025-12-23 13:30:51,859: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Picasso%20Museum%20Barcelona%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:51,986: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=fx7rzTNi6zk%2CXaDSAaSO60M%2CGqUQZeCms-Y%2CAYnA39e0XXM%2CGbbw5uNZbKc%2CWrtGet4RgyY%2CN5_Ki-EWQMk%2CSjbKTECJjdc%2CA5ub3MbNFMQ%2CyWvLHXGE7lw&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:51,987: INFO/ForkPoolWorker-1] Found 8 YouTube Shorts for query: Picasso Museum Barcelona travel
+[2025-12-23 13:30:51,988: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Picasso Museum Barcelona travel
+[2025-12-23 13:30:51,989: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Picasso Museum - using API quota
+[2025-12-23 13:30:52,522: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Picasso%20Museum&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:52,673: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=XaDSAaSO60M%2CSjbKTECJjdc%2CNKQQETQYMTk%2CGqUQZeCms-Y%2CMm7nca9OGmM%2Cmbw-nO1vp2k%2CYx3xO8SVcSo%2CGbbw5uNZbKc%2Cd5jFZlHvkys%2CV-CRWcZ5z4U&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:52,676: INFO/ForkPoolWorker-1] Found 4 YouTube Shorts for query: visiting Picasso Museum
+[2025-12-23 13:30:52,677: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Picasso Museum
+[2025-12-23 13:30:52,677: INFO/ForkPoolWorker-1] Found 10 YouTube Shorts for Picasso Museum
+[2025-12-23 13:30:52,684: INFO/ForkPoolWorker-1] ✓ Stored 10 social videos
+[2025-12-23 13:30:52,684: INFO/ForkPoolWorker-1]   ✓ Stored 10 videos
+[2025-12-23 13:30:53,686: INFO/ForkPoolWorker-1] [21/24] Processing: Sant Pau Art Nouveau
+[2025-12-23 13:30:53,687: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Sant Pau Art Nouveau
+[2025-12-23 13:30:53,687: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Sant Pau Art Nouveau Barcelona travel - using API quota
+[2025-12-23 13:30:54,245: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Sant%20Pau%20Art%20Nouveau%20Barcelona%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:54,363: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=MYQE2JJe4b0%2ChyfyW_lnNk0%2CV0VWnbGIL3s%2C9Cf4hMxPpUU%2CgJFXpoqpDKc%2C67Kl2R3ISZc%2CMA8jAZ5Mb1g%2CKjrbcOl7WpY%2CM2CxgVzjKLo%2CsCQi4kW3fnc&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:54,365: INFO/ForkPoolWorker-1] Found 4 YouTube Shorts for query: Sant Pau Art Nouveau Barcelona travel
+[2025-12-23 13:30:54,366: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Sant Pau Art Nouveau Barcelona travel
+[2025-12-23 13:30:54,366: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Sant Pau Art Nouveau - using API quota
+[2025-12-23 13:30:54,933: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Sant%20Pau%20Art%20Nouveau&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:55,040: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=VsXeVkmbML0%2CrhFuUP9GCss%2C6RQ1XvnwYlk%2CY-JK4-eU3X8%2CMA8jAZ5Mb1g%2CLQ4Jp2PG_Eo%2CdkgXfAe5w3U%2CsCQi4kW3fnc%2ChyfyW_lnNk0%2C07Ut2s5Y3c4&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:55,041: INFO/ForkPoolWorker-1] Found 5 YouTube Shorts for query: visiting Sant Pau Art Nouveau
+[2025-12-23 13:30:55,041: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Sant Pau Art Nouveau
+[2025-12-23 13:30:55,042: INFO/ForkPoolWorker-1] Only found 7 travel videos, searching for general content
+[2025-12-23 13:30:55,042: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Sant Pau Art Nouveau Barcelona - using API quota
+[2025-12-23 13:30:55,666: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Sant%20Pau%20Art%20Nouveau%20Barcelona&type=video&videoDuration=short&maxResults=3&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:55,734: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=VsXeVkmbML0%2CMYQE2JJe4b0%2ChyfyW_lnNk0&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:55,736: INFO/ForkPoolWorker-1] Found 1 YouTube Shorts for query: Sant Pau Art Nouveau Barcelona
+[2025-12-23 13:30:55,737: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Sant Pau Art Nouveau Barcelona
+[2025-12-23 13:30:55,738: INFO/ForkPoolWorker-1] Found 7 YouTube Shorts for Sant Pau Art Nouveau
+[2025-12-23 13:30:55,743: INFO/ForkPoolWorker-1] ✓ Stored 7 social videos
+[2025-12-23 13:30:55,744: INFO/ForkPoolWorker-1]   ✓ Stored 7 videos
+[2025-12-23 13:30:56,747: INFO/ForkPoolWorker-1] [22/24] Processing: Tablao Flamenco Cordobés
+[2025-12-23 13:30:56,747: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Tablao Flamenco Cordobés
+[2025-12-23 13:30:56,748: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Tablao Flamenco Cordobés Barcelona travel - using API quota
+[2025-12-23 13:30:57,284: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Tablao%20Flamenco%20Cordob%C3%A9s%20Barcelona%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:57,394: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=L2ol8kG4fOc%2CBPliV-OSnZ4%2CqY3nEhRuiBw%2CM-2t8xJho4o%2C15y-BXtWCM0%2Cn9FHuvJ3NsU%2CMc6PP4cGqE0%2C59eNUNO96g8%2CFnVjhoL26QA%2CG67tnF0EtfQ&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:57,396: INFO/ForkPoolWorker-1] Found 5 YouTube Shorts for query: Tablao Flamenco Cordobés Barcelona travel
+[2025-12-23 13:30:57,397: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Tablao Flamenco Cordobés Barcelona travel
+[2025-12-23 13:30:57,398: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Tablao Flamenco Cordobés - using API quota
+[2025-12-23 13:30:57,915: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Tablao%20Flamenco%20Cordob%C3%A9s&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:58,017: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=59eNUNO96g8%2CVTWdfW5GE1Y%2CGG6kuRUUL0Y%2CfVkHzhVSkw8%2CaWHDmqiq8g0%2CBuNNVzWSmB8%2Cx2mnoQIA_GA%2CF3_6_YsXqR4%2Cf1CbunBpVWo%2Cg6wKMW3Te14&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:58,021: INFO/ForkPoolWorker-1] Found 5 YouTube Shorts for query: visiting Tablao Flamenco Cordobés
+[2025-12-23 13:30:58,022: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Tablao Flamenco Cordobés
+[2025-12-23 13:30:58,023: INFO/ForkPoolWorker-1] Only found 9 travel videos, searching for general content
+[2025-12-23 13:30:58,024: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Tablao Flamenco Cordobés Barcelona - using API quota
+[2025-12-23 13:30:58,368: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Tablao%20Flamenco%20Cordob%C3%A9s%20Barcelona&type=video&videoDuration=short&maxResults=1&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:58,537: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=L2ol8kG4fOc%2CiK7JMkDHGL8%2Cn9FHuvJ3NsU%2Cm4XL8m69jWY%2CMc6PP4cGqE0%2Cw9fzT4ZB6yM%2C15y-BXtWCM0%2CiGE2yr4qwkQ%2CRvRNHrgYNos%2CVTWdfW5GE1Y%2CRuAFH8aw0xg%2CFnVjhoL26QA%2C126ioHp1pFI%2CJ7ZxM6uUgQM%2CHHa8AUk2CDU%2CfPoExL77q_M%2CZLDPj00xoGQ%2CqY3nEhRuiBw%2CABbE12EVOTE%2CsAxsipC2c4I%2C1HWCm1M1edA%2CXBpYI_oVXOQ%2CaWHDmqiq8g0%2CV_7V-Fa2dDQ%2CM-2t8xJho4o&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:30:58,543: INFO/ForkPoolWorker-1] Found 12 YouTube Shorts for query: Tablao Flamenco Cordobés Barcelona
+[2025-12-23 13:30:58,544: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Tablao Flamenco Cordobés Barcelona
+[2025-12-23 13:30:58,544: INFO/ForkPoolWorker-1] Found 10 YouTube Shorts for Tablao Flamenco Cordobés
+[2025-12-23 13:30:58,550: INFO/ForkPoolWorker-1] ✓ Stored 10 social videos
+[2025-12-23 13:30:58,550: INFO/ForkPoolWorker-1]   ✓ Stored 10 videos
+[2025-12-23 13:30:59,553: INFO/ForkPoolWorker-1] [23/24] Processing: Wax Museum Barcelona
+[2025-12-23 13:30:59,553: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Wax Museum Barcelona
+[2025-12-23 13:30:59,555: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Wax Museum Barcelona Barcelona travel - using API quota
+[2025-12-23 13:31:00,056: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Wax%20Museum%20Barcelona%20Barcelona%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:31:00,192: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=T_r2f0lKM9k%2CQ1N9ZI20Hpc%2CHt9AHM6ZDdU%2CGiuIvo3TUtw%2CLSJYjqTIMVo%2C4j9wlJIKd8M%2CCavxRIWBuCE%2CwZiw7e2mmZY%2Cwjwf7OZdnf0%2CA7LPF2pHTds&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:31:00,195: INFO/ForkPoolWorker-1] Found 6 YouTube Shorts for query: Wax Museum Barcelona Barcelona travel
+[2025-12-23 13:31:00,196: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Wax Museum Barcelona Barcelona travel
+[2025-12-23 13:31:00,197: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Wax Museum Barcelona - using API quota
+[2025-12-23 13:31:00,756: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Wax%20Museum%20Barcelona&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:31:00,870: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=T_r2f0lKM9k%2CaK9-rTY6fhA%2CHt9AHM6ZDdU%2CE5QpF-pG0h8%2CGiuIvo3TUtw%2CSnJo27vj_-Y%2Cwjwf7OZdnf0%2Coi1MsLWDlQc%2CwZiw7e2mmZY%2CmpfLKjynLc4&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:31:00,873: INFO/ForkPoolWorker-1] Found 5 YouTube Shorts for query: visiting Wax Museum Barcelona
+[2025-12-23 13:31:00,874: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Wax Museum Barcelona
+[2025-12-23 13:31:00,876: INFO/ForkPoolWorker-1] Found 10 YouTube Shorts for Wax Museum Barcelona
+[2025-12-23 13:31:00,885: INFO/ForkPoolWorker-1] ✓ Stored 10 social videos
+[2025-12-23 13:31:00,887: INFO/ForkPoolWorker-1]   ✓ Stored 10 videos
+[2025-12-23 13:31:01,891: INFO/ForkPoolWorker-1] [24/24] Processing: Catamaran Cruise Venice
+[2025-12-23 13:31:01,893: INFO/ForkPoolWorker-1] Fetching YouTube Shorts for Catamaran Cruise Venice
+[2025-12-23 13:31:01,894: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: Catamaran Cruise Venice Venice travel - using API quota
+[2025-12-23 13:31:02,563: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=Catamaran%20Cruise%20Venice%20Venice%20travel&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:31:02,708: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=lL3rD7EMSWA%2CISmWBb2J17Q%2C1ARboYi_S08%2CYdk3uH5bgN4%2CThE8LfJzQJ8%2CnMsjpEjhIgc%2CuWt2riRsQoY%2CEcTxl_nhp_Q%2Cb3xMXvQE0gw%2CN3GBdzqz5PM&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:31:02,712: INFO/ForkPoolWorker-1] Found 7 YouTube Shorts for query: Catamaran Cruise Venice Venice travel
+[2025-12-23 13:31:02,714: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: Catamaran Cruise Venice Venice travel
+[2025-12-23 13:31:02,715: INFO/ForkPoolWorker-1] ⚠ YouTube cache MISS for: visiting Catamaran Cruise Venice - using API quota
+[2025-12-23 13:31:03,373: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/search?part=snippet&q=visiting%20Catamaran%20Cruise%20Venice&type=video&videoDuration=short&maxResults=10&regionCode=US&relevanceLanguage=en&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:31:03,487: INFO/ForkPoolWorker-1] HTTP Request: GET https://www.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics%2Cstatus&id=ThE8LfJzQJ8%2CnMsjpEjhIgc%2CIFSbnvyOAdU%2CUe1hIFsTF9M%2CT3K7PReVa8o%2CkmVLZOmC5iY%2CRf9m_wr0n5k%2CNZ101TaQDjc%2CcV1xY8K_jf4%2CCmPYukb8dPo&key=AIzaSyAR1m6tnIeBJV0pqUpDXhmI3gW1DcJW3nI "HTTP/1.1 200 OK"
+[2025-12-23 13:31:03,489: INFO/ForkPoolWorker-1] Found 5 YouTube Shorts for query: visiting Catamaran Cruise Venice
+[2025-12-23 13:31:03,490: INFO/ForkPoolWorker-1] ✓ Cached YouTube results for: visiting Catamaran Cruise Venice
+[2025-12-23 13:31:03,491: INFO/ForkPoolWorker-1] Found 10 YouTube Shorts for Catamaran Cruise Venice
+[2025-12-23 13:31:03,496: INFO/ForkPoolWorker-1] ✓ Stored 10 social videos
+[2025-12-23 13:31:03,497: INFO/ForkPoolWorker-1]   ✓ Stored 10 videos
+[2025-12-23 13:31:04,500: INFO/ForkPoolWorker-1] 
+[2025-12-23 13:31:04,501: INFO/ForkPoolWorker-1] ================================================================================
+[2025-12-23 13:31:04,501: INFO/ForkPoolWorker-1] YOUTUBE RETRY COMPLETE
+[2025-12-23 13:31:04,502: INFO/ForkPoolWorker-1] ================================================================================
+[2025-12-23 13:31:04,502: INFO/ForkPoolWorker-1] Total Processed: 24
+[2025-12-23 13:31:04,502: INFO/ForkPoolWorker-1] ✅ Success: 24
+[2025-12-23 13:31:04,502: INFO/ForkPoolWorker-1] ❌ Failed: 0
+[2025-12-23 13:31:04,503: INFO/ForkPoolWorker-1] ================================================================================
+[2025-12-23 13:31:04,510: INFO/ForkPoolWorker-1] Task app.tasks.youtube_retry_tasks.fetch_missing_youtube_videos[1181cb76-3e3f-4c6a-abba-3c890bc9abb1] succeeded in 64.48876620899864s: {'total': 24, 'success': 24, 'failed': 0, 'quota_exceeded': False, 'quota_exceeded_at': None, 'from_queue_success': 0, 'from_queue_failed': 0}
