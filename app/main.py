@@ -48,7 +48,10 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Tooryst Backed",
         version="0.1.0",
-        lifespan=lifespan
+        lifespan=lifespan,
+        docs_url=None,      # Disable /docs
+        redoc_url=None,     # Disable /redoc
+        openapi_url=None    # Disable /openapi.json (schema endpoint)
     )
     
     # Add CORS middleware to allow frontend connections
