@@ -53,6 +53,10 @@ steps:
             echo 'Configuring Docker authentication...'
             sudo gcloud auth configure-docker us-central1-docker.pkg.dev -q
 
+            echo 'Cleaning up old Docker resources...'
+            sudo docker system prune -af --volumes --filter "until=24h" || true
+            sudo docker image prune -af || true
+
             echo 'Pulling latest backend image...'
             sudo docker pull us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA || {
               echo 'ERROR: Failed to pull Docker image'
