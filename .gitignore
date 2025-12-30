@@ -33,30 +33,30 @@ ENV/
 *~
 
 # Backend
-backend/logs/
-backend/.pids/
-backend/data/*.xlsx
-backend/data/*.csv
-backend/test_outputs/
-backend/test_*.py
-backend/check_*.py
-backend/example_*.py
-backend/**/__pycache__/
-backend/**/*.pyc
-backend/**/*.pyo
-backend/**/*.pyd
-backend/*.db
-backend/*.sqlite
-backend/*.sqlite3
+logs/
+.pids/
+data/*.xlsx
+data/*.csv
+test_outputs/
+test_*.py
+check_*.py
+example_*.py
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+*.db
+*.sqlite
+*.sqlite3
 
 # Backend scripts
-backend/scripts/test_*.py
-backend/scripts/check_*.py
-backend/scripts/__pycache__/
+scripts/test_*.py
+scripts/check_*.py
+scripts/__pycache__/
 
 # Celery
 celerybeat-schedule*
-backend/celerybeat-schedule*
+celerybeat-schedule*
 
 # Environment variables
 .env

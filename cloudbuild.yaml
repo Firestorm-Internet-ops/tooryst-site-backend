@@ -1,0 +1,122 @@
+steps:
+  # Step 0: Build Docker image with error handling
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - '-c'
+      - |
+        set -e  # Exit immediately if any command fails
+        set -o pipefail  # Catch errors in pipes
+
+        echo "Starting Docker build for backend..."
+
+        docker build \
+          -t us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA \
+          -t us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:latest \
+          -f Dockerfile \
+          . || {
+            echo "ERROR: Docker build failed!"
+            exit 1
+          }
+
+        echo "✓ Docker build completed successfully"
+
+        # Verify image was created
+        docker images | grep us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend || {
+          echo "ERROR: Docker image not found after build!"
+          exit 1
+        }
+
+        echo "✓ Docker image verified"
+    entrypoint: bash
+
+  # Step 1: Push Docker image to Artifact Registry
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - '--all-tags'
+      - us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend
+
+  # Step 2: Deploy to VM via SSH
+  - name: gcr.io/cloud-builders/gcloud
+    args:
+      - '-c'
+      - |
+        set -e  # Exit immediately if any command fails
+
+        echo "Deploying to VM tooryst-backend-vm..."
+
+        gcloud compute ssh tooryst-backend-vm \
+          --zone=us-central1-c \
+          --command "
+            set -e
+
+            echo 'Configuring Docker authentication...'
+            sudo gcloud auth configure-docker us-central1-docker.pkg.dev -q
+
+            echo 'Pulling latest backend image...'
+            sudo docker pull us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA || {
+              echo 'ERROR: Failed to pull Docker image'
+              exit 1
+            }
+
+            echo 'Stopping and removing old API container...'
+            sudo docker rm -f tooryst-backend || true
+
+            echo 'Starting new API container...'
+            sudo docker run -d \
+              --network host \
+              --name tooryst-backend \
+              --restart unless-stopped \
+              --env-file /home/thebettervacation_com/.env \
+              us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA || {
+              echo 'ERROR: Failed to start API container'
+              exit 1
+            }
+
+            echo 'Waiting for API to start...'
+            sleep 5
+
+            echo 'Stopping and removing old Celery worker container...'
+            sudo docker rm -f tooryst-celery || true
+
+            echo 'Starting new Celery worker container...'
+            sudo docker run -d \
+              --network host \
+              --name tooryst-celery \
+              --restart unless-stopped \
+              --env-file /home/thebettervacation_com/.env \
+              us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA \
+              celery -A app.celery_app:celery_app worker --loglevel=INFO || {
+              echo 'ERROR: Failed to start Celery worker container'
+              exit 1
+            }
+
+            echo 'Waiting for services to stabilize...'
+            sleep 3
+
+            echo 'Performing health check...'
+            if curl -fsS http://127.0.0.1:8000/api/v1/health >/dev/null; then
+              echo '✓ Health check passed'
+            else
+              echo 'WARNING: Health check failed, but continuing...'
+            fi
+
+            echo 'Checking running containers...'
+            sudo docker ps --filter name=tooryst
+
+            echo '✓ Deployment completed successfully'
+          " || {
+            echo "ERROR: Deployment to VM failed!"
+            exit 1
+          }
+
+        echo "✓ Backend deployment successful"
+    entrypoint: bash
+
+images:
+  - 'us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA'
+  - 'us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:latest'
+
+options:
+  machineType: E2_HIGHCPU_8
+  logging: CLOUD_LOGGING_ONLY

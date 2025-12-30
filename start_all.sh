@@ -33,6 +33,9 @@ if [ -f ".env" ]; then
     export $(cat .env | grep -v '^#' | xargs)
 fi
 
+# Create logs directory if it doesn't exist
+mkdir -p logs
+
 # Check if port 8000 is in use
 if lsof -ti:8000 > /dev/null 2>&1; then
     echo "Port 8000 is in use. Stopping existing process..."
