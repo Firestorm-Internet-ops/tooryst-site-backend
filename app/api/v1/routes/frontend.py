@@ -161,11 +161,18 @@ class PaginatedCityResponse(BaseModel):
 
 @router.get("/cities", response_model=PaginatedCityResponse)
 async def get_cities(
-    limit: Optional[int] = Query(None, ge=1, description="Maximum number of results (None for all)")
+    limit: Optional[int] = Query(None, ge=1, le=500, description="Maximum number of results (max 500)")
 ):
-    """Get all cities with attraction counts."""
+    """Get all cities with attraction counts.
+
+    Default returns all cities, but limited to max 500 to prevent memory issues.
+    """
     session = SessionLocal()
     try:
+        # Apply max limit for safety (prevent OOM if cities table grows large)
+        MAX_CITIES_LIMIT = 500
+        effective_limit = min(limit, MAX_CITIES_LIMIT) if limit else MAX_CITIES_LIMIT
+
         query = (
             session.query(
                 models.City,
@@ -174,11 +181,9 @@ async def get_cities(
             .outerjoin(models.Attraction, models.City.id == models.Attraction.city_id)
             .group_by(models.City.id)
             .order_by(models.City.name)
+            .limit(effective_limit)
         )
-        
-        if limit:
-            query = query.limit(limit)
-        
+
         cities = query.all()
         
         # Get total count
@@ -443,8 +448,17 @@ async def get_attractions(
 
 
 @router.get("/attractions/{slug}", response_model=dict)
-async def get_attraction(slug: str):
-    """Get complete attraction data with all sections."""
+async def get_attraction(
+    slug: str,
+    reviews_limit: int = Query(default=50, ge=1, le=200, description="Max reviews to return"),
+    videos_limit: int = Query(default=20, ge=1, le=100, description="Max videos to return"),
+    tips_limit: int = Query(default=50, ge=1, le=100, description="Max tips to return"),
+    nearby_limit: int = Query(default=20, ge=1, le=50, description="Max nearby attractions to return")
+):
+    """Get complete attraction data with all sections.
+
+    Query parameters allow controlling the size of large collections to prevent memory issues.
+    """
     session = SessionLocal()
     try:
         # Get attraction
@@ -454,32 +468,58 @@ async def get_attraction(slug: str):
             .filter(models.Attraction.slug == slug)
             .first()
         )
-        
+
         if not attraction:
             raise HTTPException(status_code=404, detail=f"Attraction '{slug}' not found")
-        
+
         attr, city = attraction
-        
-        # Get all data sections (using correct field names)
-        hero_images = session.query(models.HeroImage).filter_by(attraction_id=attr.id).order_by(models.HeroImage.position).all()
+
+        # Get all data sections with LIMITS to prevent memory exhaustion
+        # Hero images: limit to 20 (should be small anyway)
+        hero_images = session.query(models.HeroImage).filter_by(
+            attraction_id=attr.id
+        ).order_by(models.HeroImage.position).limit(20).all()
 
         # Get best time data - separate regular and special days
+        # Regular days: max 7 (one per day of week)
         best_time_regular = session.query(models.BestTimeData).filter_by(
             attraction_id=attr.id, day_type='regular'
-        ).order_by(models.BestTimeData.day_int).all()
+        ).order_by(models.BestTimeData.day_int).limit(7).all()
 
+        # Special days: limit to next 30 days
         best_time_special = session.query(models.BestTimeData).filter_by(
             attraction_id=attr.id, day_type='special'
-        ).order_by(models.BestTimeData.date_local).all()
+        ).order_by(models.BestTimeData.date_local).limit(30).all()
 
-        weather = session.query(models.WeatherForecast).filter_by(attraction_id=attr.id).order_by(models.WeatherForecast.date_local).all()
+        # Weather: limit to next 7 days
+        weather = session.query(models.WeatherForecast).filter_by(
+            attraction_id=attr.id
+        ).order_by(models.WeatherForecast.date_local).limit(7).all()
+
         map_data = session.query(models.MapSnapshot).filter_by(attraction_id=attr.id).first()
         metadata = session.query(models.AttractionMetadata).filter_by(attraction_id=attr.id).first()
-        reviews = session.query(models.Review).filter_by(attraction_id=attr.id).order_by(models.Review.time.desc()).all()
-        tips = session.query(models.Tip).filter_by(attraction_id=attr.id).all()
-        audience = session.query(models.AudienceProfile).filter_by(attraction_id=attr.id).all()
-        videos = session.query(models.SocialVideo).filter_by(attraction_id=attr.id).all()
+
+        # CRITICAL FIX: Limit reviews to prevent OOM with popular attractions
+        reviews = session.query(models.Review).filter_by(
+            attraction_id=attr.id
+        ).order_by(models.Review.time.desc()).limit(reviews_limit).all()
+
+        # Limit tips
+        tips = session.query(models.Tip).filter_by(
+            attraction_id=attr.id
+        ).limit(tips_limit).all()
+
+        # Audience profiles: usually 5-10, but add limit for safety
+        audience = session.query(models.AudienceProfile).filter_by(
+            attraction_id=attr.id
+        ).limit(20).all()
+
+        # Limit videos
+        videos = session.query(models.SocialVideo).filter_by(
+            attraction_id=attr.id
+        ).limit(videos_limit).all()
         # Query nearby attractions with left join to attractions table for rating/review_count
+        # LIMIT to prevent memory issues with attractions that have many nearby places
         nearby = session.query(
             models.NearbyAttraction,
             models.Attraction.rating,
@@ -489,7 +529,7 @@ async def get_attraction(slug: str):
         ).outerjoin(
             models.Attraction,
             models.NearbyAttraction.nearby_attraction_id == models.Attraction.id
-        ).all()
+        ).limit(nearby_limit).all()
         
         # Build nearby attractions list (enrichment happens asynchronously in background)
         enriched_nearby = []
@@ -515,8 +555,8 @@ async def get_attraction(slug: str):
         
         widgets = session.query(models.WidgetConfig).filter_by(attraction_id=attr.id).first()
         
-        # Build response
-        return {
+        # Build response with size validation
+        response_data = {
             "id": attr.id,
             "slug": attr.slug,
             "name": attr.name,
@@ -608,6 +648,11 @@ async def get_attraction(slug: str):
                     "total_reviews": attr.review_count if attr.review_count else 0,
                     "summary_text": attr.summary_gemini
                 },
+                "pagination": {
+                    "returned": len(reviews),
+                    "limit": reviews_limit,
+                    "has_more": (attr.review_count or 0) > reviews_limit
+                },
                 "reviews": [
                     {
                         "author_name": r.author_name,
@@ -688,7 +733,19 @@ async def get_attraction(slug: str):
                 "widget_secondary": widgets.widget_secondary
             } if widgets else None
         }
-        
+
+        # Validate response size to prevent OOM during JSON serialization
+        import sys
+        response_size_bytes = sys.getsizeof(str(response_data))
+        MAX_RESPONSE_SIZE_MB = 10  # 10MB limit
+        if response_size_bytes > MAX_RESPONSE_SIZE_MB * 1024 * 1024:
+            logger.warning(
+                f"Response size {response_size_bytes / 1024 / 1024:.2f}MB exceeds limit "
+                f"for attraction {slug}. Consider reducing limits."
+            )
+
+        return response_data
+
     except Exception as e:
         import traceback
         print(f"❌ Error fetching attraction '{slug}': {e}")

@@ -77,4 +77,4 @@ yarn-error.log*
 pnpm-lock.yaml
 
 # OS
-Thumbs.db
+Thumbs.dbcoverage.xml
