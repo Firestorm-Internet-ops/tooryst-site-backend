@@ -54,7 +54,7 @@ steps:
             sudo gcloud auth configure-docker us-central1-docker.pkg.dev -q
 
             echo 'Cleaning up old Docker resources...'
-            sudo docker system prune -af --volumes --filter "until=24h" || true
+            sudo docker system prune -af --filter "until=24h" || true
             sudo docker image prune -af || true
 
             echo 'Pulling latest backend image...'
