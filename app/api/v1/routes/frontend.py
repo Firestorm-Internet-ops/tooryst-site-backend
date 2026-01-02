@@ -22,6 +22,7 @@ class AttractionSummary(BaseModel):
     slug: str
     name: str
     city: str
+    city_slug: str
     country: str
     hero_image: Optional[str] = None
     average_rating: Optional[float] = None
@@ -101,6 +102,7 @@ async def get_homepage():
                 slug=attr.slug,
                 name=attr.name,
                 city=city.name,
+                city_slug=city.slug,
                 country=city.country,
                 hero_image=hero_img,
                 average_rating=float(attr.rating) if attr.rating else None,
@@ -161,16 +163,16 @@ class PaginatedCityResponse(BaseModel):
 
 @router.get("/cities", response_model=PaginatedCityResponse)
 async def get_cities(
-    limit: Optional[int] = Query(None, ge=1, le=500, description="Maximum number of results (max 500)")
+    limit: Optional[int] = Query(None, ge=1, le=1000, description="Maximum number of results (max 1000)")
 ):
     """Get all cities with attraction counts.
 
-    Default returns all cities, but limited to max 500 to prevent memory issues.
+    Default returns all cities, but limited to max 1000 to prevent memory issues.
     """
     session = SessionLocal()
     try:
         # Apply max limit for safety (prevent OOM if cities table grows large)
-        MAX_CITIES_LIMIT = 500
+        MAX_CITIES_LIMIT = 1000
         effective_limit = min(limit, MAX_CITIES_LIMIT) if limit else MAX_CITIES_LIMIT
 
         query = (
@@ -268,6 +270,7 @@ async def get_city(city_slug: str):
                 slug=attr.slug,
                 name=attr.name,
                 city=city.name,
+                city_slug=city.slug,
                 country=city.country,
                 hero_image=hero_img,
                 average_rating=float(attr.rating) if attr.rating else None,
@@ -353,6 +356,7 @@ async def get_city_attractions(
                 slug=attr.slug,
                 name=attr.name,
                 city=city.name,
+                city_slug=city.slug,
                 country=city.country,
                 hero_image=hero_img,
                 average_rating=float(attr.rating) if attr.rating else None,
@@ -433,6 +437,7 @@ async def get_attractions(
                 slug=attr.slug,
                 name=attr.name,
                 city=city_obj.name,
+                city_slug=city_obj.slug,
                 country=city_obj.country,
                 hero_image=hero_image,
                 average_rating=float(attr.rating) if attr.rating else None,
@@ -880,6 +885,7 @@ async def search(q: str = Query(..., description="Search query")):
                 models.Attraction,
                 models.City.name.label('city_name'),
                 models.City.country.label('country_name'),
+                models.City.slug.label('city_slug'),
                 models.HeroImage.url.label("hero_image")
             )
             .join(models.City, models.Attraction.city_id == models.City.id)
@@ -898,12 +904,13 @@ async def search(q: str = Query(..., description="Search query")):
         )
 
         attractions = []
-        for attr, city_name, country_name, hero_image in attractions_query.all():
+        for attr, city_name, country_name, city_slug, hero_image in attractions_query.all():
             attractions.append(AttractionSummary(
                 id=attr.id,
                 slug=attr.slug,
                 name=attr.name,
                 city=city_name,
+                city_slug=city_slug,
                 country=country_name,
                 hero_image=hero_image,
                 average_rating=float(attr.rating) if attr.rating else None,
