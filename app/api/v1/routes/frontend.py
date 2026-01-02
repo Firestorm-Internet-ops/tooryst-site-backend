@@ -387,11 +387,18 @@ class PaginatedAttractionResponse(BaseModel):
 async def get_attractions(
     city: Optional[str] = Query(None, description="Filter by city name"),
     country: Optional[str] = Query(None, description="Filter by country"),
-    limit: Optional[int] = Query(None, ge=1, description="Maximum number of results (None for all)")
+    limit: Optional[int] = Query(None, ge=1, le=1000, description="Maximum number of results (max 1000)")
 ):
-    """Get all attractions with optional filters."""
+    """Get all attractions with optional filters.
+
+    Default returns all attractions, but limited to max 1000 to prevent memory issues.
+    """
     session = SessionLocal()
     try:
+        # Apply max limit for safety (prevent OOM if attractions table grows large)
+        MAX_ATTRACTIONS_LIMIT = 1000
+        effective_limit = min(limit, MAX_ATTRACTIONS_LIMIT) if limit else MAX_ATTRACTIONS_LIMIT
+
         query = (
             session.query(
                 models.Attraction,
@@ -415,10 +422,8 @@ async def get_attractions(
         # Get total count
         total = query.count()
 
-        # Get attractions
-        query = query.order_by(models.Attraction.name)
-        if limit:
-            query = query.limit(limit)
+        # Get attractions with limit
+        query = query.order_by(models.Attraction.name).limit(effective_limit)
         attractions = query.all()
 
         items = []
@@ -481,10 +486,20 @@ async def get_attraction(
         ).order_by(models.HeroImage.position).limit(20).all()
 
         # Get best time data - separate regular and special days
-        # Regular days: max 7 (one per day of week)
-        best_time_regular = session.query(models.BestTimeData).filter_by(
-            attraction_id=attr.id, day_type='regular'
-        ).order_by(models.BestTimeData.day_int).limit(7).all()
+        # Regular days: Get one row per day_int (0-6), using the most recent if duplicates exist
+        from sqlalchemy import func
+
+        # Subquery to get the max ID for each day_int (most recent entry)
+        subquery = session.query(
+            func.max(models.BestTimeData.id).label('max_id')
+        ).filter_by(
+            attraction_id=attr.id,
+            day_type='regular'
+        ).group_by(models.BestTimeData.day_int).subquery()
+
+        best_time_regular = session.query(models.BestTimeData).filter(
+            models.BestTimeData.id.in_(subquery)
+        ).order_by(models.BestTimeData.day_int).all()
 
         # Special days: limit to next 30 days
         best_time_special = session.query(models.BestTimeData).filter_by(

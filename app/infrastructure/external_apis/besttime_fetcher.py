@@ -336,6 +336,48 @@ class BestTimeFetcherImpl:
         # Sort regular_days by day_int (0=Monday to 6=Sunday)
         regular_days.sort(key=lambda x: x["day_int"])
 
+        # Validate we have all 7 days (0=Monday through 6=Sunday)
+        unique_day_ints = set(day['day_int'] for day in regular_days)
+        expected_days = set(range(7))  # 0-6 for Monday-Sunday
+
+        if unique_day_ints != expected_days:
+            missing_days = expected_days - unique_day_ints
+            logger.warning(
+                f"BestTime returned incomplete data for venue {venue_id} ({venue_name}). "
+                f"Got {len(unique_day_ints)} days, missing day_ints: {sorted(missing_days)}. "
+                f"Triggering Gemini fallback for complete week data."
+            )
+
+            # Use Gemini fallback to get complete 7-day data
+            try:
+                city_tz = city.timezone if city and hasattr(city, 'timezone') else None
+                gemini_result = await self._fallback_gemini(venue_name, venue_address, city_tz)
+                if gemini_result and gemini_result.get('regular_days'):
+                    logger.info(f"Gemini fallback successful for {venue_id}, got {len(gemini_result['regular_days'])} days")
+                    regular_days = gemini_result.get('regular_days', [])
+                    special_days_from_gemini = gemini_result.get('special_days', [])
+                    # Update today_data from Gemini result
+                    if city:
+                        try:
+                            venue_tz = pytz.timezone(city.timezone)
+                            now_venue = datetime.now(venue_tz)
+                        except Exception:
+                            now_venue = datetime.utcnow()
+                    else:
+                        now_venue = datetime.utcnow()
+                    today_day_int = now_venue.weekday()
+                    today_data = next((day for day in regular_days if day['day_int'] == today_day_int), None)
+                    # We'll use special_days_from_gemini later
+                else:
+                    logger.error(f"Gemini fallback failed for {venue_id}, keeping partial BestTime data")
+                    special_days_from_gemini = []
+            except Exception as e:
+                logger.error(f"Exception during Gemini fallback for {venue_id}: {e}")
+                special_days_from_gemini = []
+        else:
+            logger.info(f"BestTime returned complete data for {venue_id}: all 7 days present")
+            special_days_from_gemini = []
+
         if not today_data and regular_days:
             # Fallback to first day if today not found
             today_data = regular_days[0]
@@ -344,16 +386,8 @@ class BestTimeFetcherImpl:
             logger.error("No forecast data available")
             return None
 
-        # TODO: Re-enable special days generation
-        # # Generate special days data using Gemini
-        # timezone_str = city.timezone if city and city.timezone else "UTC"
-        # special_days_result = await self.gemini_fallback.generate_special_days_data(
-        #     venue_name=venue_name,
-        #     venue_address=venue_address,
-        #     timezone_str=timezone_str
-        # )
-        # special_days = special_days_result.get("special_days", []) if special_days_result else []
-        special_days = []
+        # Use special_days from Gemini fallback if available, otherwise empty
+        special_days = special_days_from_gemini if 'special_days_from_gemini' in locals() else []
 
         return {
             "card": today_data["card"],

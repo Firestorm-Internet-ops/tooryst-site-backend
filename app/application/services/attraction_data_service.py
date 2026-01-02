@@ -688,32 +688,130 @@ class AttractionDataService:
     def build_page_dto(self, attraction: models.Attraction, city_name: str, country: Optional[str]) -> AttractionPageDTO:
         """Assemble full page DTO."""
         cards = self.build_page_cards(attraction)
-        
+
         # Get nearby attractions with enriched data
         session = self._session()
         nearby_attractions = []
+        best_time_data = None
+        social_videos_data = None
+        visitor_info_data = None
+        audience_profiles_data = None
+
         try:
             with session as s:
+                import logging
+                logger = logging.getLogger(__name__)
+
+                # Get best_time data (all days for BestTimesSection)
+                best_time_rows = (
+                    s.query(models.BestTimeData)
+                    .filter(models.BestTimeData.attraction_id == attraction.id)
+                    .order_by(models.BestTimeData.day_int.asc())
+                    .all()
+                )
+
+                if best_time_rows:
+                    regular_days = []
+                    special_days = []
+
+                    for row in best_time_rows:
+                        day_data = {
+                            "day_name": row.day_name,
+                            "day_int": row.day_int,
+                            "local_date": str(row.date_local) if row.date_local else None,
+                            "is_open": row.is_open_today,
+                            "opening_time": str(row.today_opening_time) if row.today_opening_time else None,
+                            "closing_time": str(row.today_closing_time) if row.today_closing_time else None,
+                            "crowd_level": row.crowd_level_today,
+                            "best_time_text": row.reason_text,
+                            "hourly_crowd_levels": row.hourly_crowd_levels,
+                        }
+
+                        if row.day_type == "regular":
+                            regular_days.append(day_data)
+                        else:
+                            special_days.append(day_data)
+
+                    best_time_data = {
+                        "regular_days": regular_days,
+                        "special_days": special_days,
+                    }
+
+                # Get social videos
+                social_video_rows = (
+                    s.query(models.SocialVideo)
+                    .filter(models.SocialVideo.attraction_id == attraction.id)
+                    .order_by(models.SocialVideo.position.asc())
+                    .all()
+                )
+
+                if social_video_rows:
+                    social_videos_data = [
+                        {
+                            "id": v.id,
+                            "platform": v.platform,
+                            "title": v.title,
+                            "embed_url": v.embed_url,
+                            "thumbnail_url": v.thumbnail_url,
+                            "duration_seconds": v.duration_seconds,
+                        }
+                        for v in social_video_rows
+                    ]
+
+                # Get visitor info from metadata
+                metadata_row = (
+                    s.query(models.AttractionMetadata)
+                    .filter(models.AttractionMetadata.attraction_id == attraction.id)
+                    .first()
+                )
+
+                if metadata_row:
+                    contact_info = metadata_row.contact_info or {}
+                    opening_hours = metadata_row.opening_hours or []
+
+                    visitor_info_data = {
+                        "contact_info": contact_info,
+                        "opening_hours": opening_hours,
+                        "accessibility_info": metadata_row.accessibility_info,
+                        "best_season": metadata_row.best_season,
+                    }
+
+                # Get audience profiles
+                audience_rows = (
+                    s.query(models.AudienceProfile)
+                    .filter(models.AudienceProfile.attraction_id == attraction.id)
+                    .order_by(models.AudienceProfile.id.asc())
+                    .all()
+                )
+
+                if audience_rows:
+                    audience_profiles_data = [
+                        {
+                            "audience_type": a.audience_type,
+                            "description": a.description or "",
+                            "emoji": a.emoji,
+                        }
+                        for a in audience_rows
+                    ]
+
+                # Get nearby attractions with enriched data
                 nearby_rows = (
                     s.query(models.NearbyAttraction)
                     .filter(models.NearbyAttraction.attraction_id == attraction.id)
                     .order_by(models.NearbyAttraction.id.asc())
                     .all()
                 )
-                
-                import logging
-                logger = logging.getLogger(__name__)
-                
+
                 for n in nearby_rows:
                     image_url = n.image_url
                     rating = float(n.rating) if n.rating is not None else None
                     review_count = n.review_count
-                    
+
                     logger.info(f"Processing nearby attraction: {n.name} (slug: {n.slug}, nearby_id: {n.nearby_attraction_id}, image: {image_url})")
-                    
+
                     # Try to fetch missing data from attractions table
                     nearby_attr = None
-                    
+
                     # First try by nearby_attraction_id
                     if n.nearby_attraction_id:
                         nearby_attr = (
@@ -723,7 +821,7 @@ class AttractionDataService:
                         )
                         if nearby_attr:
                             logger.info(f"Found nearby attraction by ID: {nearby_attr.slug}")
-                    
+
                     # Fallback: try by slug if nearby_attraction_id is null
                     if not nearby_attr and n.slug:
                         nearby_attr = (
@@ -733,7 +831,7 @@ class AttractionDataService:
                         )
                         if nearby_attr:
                             logger.info(f"Found nearby attraction by slug: {n.slug} (id: {nearby_attr.id})")
-                    
+
                     if nearby_attr:
                         # Fill in missing image from hero_images table
                         if image_url is None:
@@ -748,17 +846,17 @@ class AttractionDataService:
                                 logger.info(f"Fetched hero image for {n.name}: {image_url}")
                             else:
                                 logger.warning(f"No hero image found for {n.name} (attraction_id: {nearby_attr.id})")
-                        
+
                         # Fill in missing rating
                         if rating is None and nearby_attr.rating is not None:
                             rating = float(nearby_attr.rating)
-                        
+
                         # Fill in missing review count
                         if review_count is None and nearby_attr.review_count is not None:
                             review_count = nearby_attr.review_count
                     else:
                         logger.warning(f"Could not find attraction for nearby: {n.name} (slug: {n.slug}, nearby_id: {n.nearby_attraction_id})")
-                    
+
                     nearby_attractions.append({
                         "name": n.name,
                         "slug": n.slug,
@@ -771,9 +869,10 @@ class AttractionDataService:
                         "review_count": review_count,
                         "vicinity": n.vicinity,
                     })
-        except Exception:
-            pass
-        
+        except Exception as e:
+            logger = __import__('logging').getLogger(__name__)
+            logger.error(f"Error building page DTO for {attraction.slug}: {e}")
+
         return AttractionPageDTO(
             attraction_id=attraction.id,
             slug=attraction.slug,
@@ -782,7 +881,11 @@ class AttractionDataService:
             country=country,
             timezone=attraction.city.timezone if attraction.city else None,
             cards=cards,
+            best_time=best_time_data,
             nearby_attractions=nearby_attractions if nearby_attractions else None,
+            social_videos=social_videos_data,
+            visitor_info=visitor_info_data,
+            audience_profiles=audience_profiles_data,
         )
 
     def build_sections_dto(self, attraction: models.Attraction, city_name: str, country: Optional[str]) -> AttractionSectionsDTO:
