@@ -63,8 +63,8 @@ steps:
               exit 1
             }
 
-            echo 'Stopping and removing old API container...'
-            sudo docker rm -f tooryst-backend || true
+            echo 'Stopping and removing old containers...'
+            sudo docker rm -f tooryst-backend tooryst-celery-beat tooryst-celery-main $(for i in {1..10}; do echo tooryst-celery-stage$i; done) || true
 
             echo 'Starting new API container...'
             sudo docker run -d \
@@ -80,18 +80,41 @@ steps:
             echo 'Waiting for API to start...'
             sleep 5
 
-            echo 'Stopping and removing old Celery worker container...'
-            sudo docker rm -f tooryst-celery || true
-
-            echo 'Starting new Celery worker container...'
+            echo 'Starting Celery Beat...'
             sudo docker run -d \
               --network host \
-              --name tooryst-celery \
+              --name tooryst-celery-beat \
               --restart unless-stopped \
               --env-file /home/thebettervacation_com/.env \
               us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA \
-              celery -A app.celery_app:celery_app worker --loglevel=INFO || {
-              echo 'ERROR: Failed to start Celery worker container'
+              celery -A app.celery_app:celery_app beat --loglevel=INFO || {
+              echo 'ERROR: Failed to start Celery Beat'
+              exit 1
+            }
+
+            echo 'Starting Celery Stage Workers...'
+            for i in {1..10}; do
+              sudo docker run -d \
+                --network host \
+                --name tooryst-celery-stage$i \
+                --restart unless-stopped \
+                --env-file /home/thebettervacation_com/.env \
+                us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA \
+                celery -A app.celery_app:celery_app worker -Q pipeline_stage_$i -c 1 -n stage$i@%h --loglevel=INFO || {
+                echo "ERROR: Failed to start Celery Stage $i"
+                exit 1
+              }
+            done
+
+            echo 'Starting Celery Main Worker...'
+            sudo docker run -d \
+              --network host \
+              --name tooryst-celery-main \
+              --restart unless-stopped \
+              --env-file /home/thebettervacation_com/.env \
+              us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA \
+              celery -A app.celery_app:celery_app worker -Q pipeline,celery -c 4 -n main@%h --loglevel=INFO || {
+              echo 'ERROR: Failed to start Celery Main Worker'
               exit 1
             }
 

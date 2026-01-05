@@ -2,6 +2,7 @@
 import os
 from celery import Celery
 from celery.schedules import crontab
+from datetime import timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -96,11 +97,7 @@ celery_app.conf.beat_schedule = {
     # Weather - Refresh every 3 days (we have 5-7 days forecast, refresh when 2-4 days left)
     "refresh-weather-periodic": {
         "task": "app.tasks.refresh_tasks.refresh_weather_data",
-        "schedule": crontab(
-            hour=int(os.getenv("WEATHER_REFRESH_HOUR", "3")),
-            minute=0,
-            day_of_week="*/3"  # Every 3 days
-        ),
+        "schedule": timedelta(days=3),  # Every 72 hours
     },
     
     # Visitor Info (Opening Hours) - Refresh weekly on Monday at 3 AM

@@ -19,6 +19,8 @@ from app.infrastructure.persistence.db import SessionLocal
 from app.infrastructure.persistence import models
 from app.core.notifications import notification_manager, AlertType, AlertSeverity
 
+logger = logging.getLogger(__name__)
+
 # Import storage functions at module level
 from app.infrastructure.persistence.storage_functions import (
     store_hero_images,
@@ -136,7 +138,7 @@ def run_pipeline_for_attractions(attraction_slugs: List[str] = None):
         # mysqlclient returns a tuple, so use scalar() to get the id
         pipeline_run_id = session.execute(text("SELECT LAST_INSERT_ID()")).scalar()
     except Exception as e:
-        print(f"Failed to create pipeline run record: {e}")
+        logger.error(f"Failed to create pipeline run record: {e}")
     finally:
         session.close()
     

@@ -146,8 +146,7 @@ async def get_homepage():
         )
     except Exception as e:
         import traceback
-        print(f"ERROR in homepage endpoint: {e}")
-        print(traceback.format_exc())
+        logger.error(f"ERROR in homepage endpoint: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         session.close()
@@ -214,8 +213,7 @@ async def get_cities(
     except Exception as e:
         # Log error and return empty result
         import traceback
-        print(f"❌ Error fetching cities: {e}")
-        traceback.print_exc()
+        logger.error(f"❌ Error fetching cities: {e}", exc_info=True)
         return PaginatedCityResponse(
             items=[],
             total=0,
@@ -511,10 +509,24 @@ async def get_attraction(
             attraction_id=attr.id, day_type='special'
         ).order_by(models.BestTimeData.date_local).limit(30).all()
 
-        # Weather: limit to next 7 days
-        weather = session.query(models.WeatherForecast).filter_by(
-            attraction_id=attr.id
-        ).order_by(models.WeatherForecast.date_local).limit(7).all()
+        # Weather: get all available data from today onwards based on timezone
+        import pytz
+        from datetime import datetime
+
+        today_date = None
+        if city and city.timezone:
+            try:
+                city_tz = pytz.timezone(city.timezone)
+                today_date = datetime.now(city_tz).date()
+            except Exception:
+                today_date = datetime.now().date()
+        else:
+            today_date = datetime.now().date()
+
+        weather = session.query(models.WeatherForecast).filter(
+            models.WeatherForecast.attraction_id == attr.id,
+            models.WeatherForecast.date_local >= today_date
+        ).order_by(models.WeatherForecast.date_local).all()
 
         map_data = session.query(models.MapSnapshot).filter_by(attraction_id=attr.id).first()
         metadata = session.query(models.AttractionMetadata).filter_by(attraction_id=attr.id).first()
@@ -768,8 +780,7 @@ async def get_attraction(
 
     except Exception as e:
         import traceback
-        print(f"❌ Error fetching attraction '{slug}': {e}")
-        traceback.print_exc()
+        logger.error(f"❌ Error fetching attraction '{slug}': {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error loading attraction: {str(e)}")
     finally:
         session.close()

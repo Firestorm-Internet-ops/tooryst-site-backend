@@ -122,7 +122,7 @@ class AttractionDataService:
                         summary_text=best_time_row.reason_text,
                     )
 
-                # Weather: get 4 days starting from today based on timezone
+                # Weather: get all available data from today onwards based on timezone
                 today_date = None
                 if attraction.city and attraction.city.timezone:
                     try:
@@ -132,28 +132,25 @@ class AttractionDataService:
                         today_date = datetime.now().date()
                 else:
                     today_date = datetime.now().date()
-                
-                # Get 5 days of weather data starting from today (today + 4 days)
-                from datetime import timedelta
-                weather_dates = [today_date + timedelta(days=i) for i in range(5)]
-                
+
+                # Get all weather data from today onwards (today through last available date in DB)
                 weather_rows = (
                     session.query(models.WeatherForecast)
                     .filter(
                         models.WeatherForecast.attraction_id == attraction.id,
-                        models.WeatherForecast.date_local.in_(weather_dates)
+                        models.WeatherForecast.date_local >= today_date
                     )
                     .order_by(models.WeatherForecast.date_local.asc())
                     .all()
                 )
-                
-                # If no weather data found for the 5-day range, get the most recent available
+
+                # If no weather data found from today onwards, get the most recent available
                 if not weather_rows:
                     weather_rows = (
                         session.query(models.WeatherForecast)
                         .filter(models.WeatherForecast.attraction_id == attraction.id)
                         .order_by(models.WeatherForecast.date_local.desc())
-                        .limit(5)
+                        .limit(7)
                         .all()
                     )
                     weather_rows = list(reversed(weather_rows))  # Sort ascending
