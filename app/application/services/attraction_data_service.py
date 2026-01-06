@@ -1,6 +1,8 @@
 """Helpers to hydrate attraction page/sections DTOs from the database."""
 from datetime import datetime
 from typing import List, Optional
+import asyncio
+import logging
 
 from app.infrastructure.persistence.db import SessionLocal
 from app.infrastructure.persistence import models
@@ -18,6 +20,7 @@ from app.application.dto.attraction_dto import (
     AboutCardDTO,
     NearbyAttractionCardDTO,
 )
+from app.infrastructure.external_apis.weather_fetcher import WeatherFetcherImpl
 from app.application.dto.section_dto import (
     AttractionSectionsDTO,
     SectionDTO,
@@ -46,9 +49,101 @@ class AttractionDataService:
 
     def __init__(self):
         self.session_factory = SessionLocal
+        self.weather_fetcher = WeatherFetcherImpl()
+        self.logger = logging.getLogger(__name__)
 
     def _session(self):
         return self.session_factory()
+    
+    async def _fetch_and_store_weather_data(self, attraction: models.Attraction, session):
+        """Fetch weather data using WeatherFetcher and store it in the database if missing."""
+        try:
+            # Check if we already have weather data for this attraction
+            today_date = datetime.now().date()
+            weather_exists = (
+                session.query(models.WeatherForecast)
+                .filter(
+                    models.WeatherForecast.attraction_id == attraction.id,
+                    models.WeatherForecast.date_local >= today_date
+                )
+                .first()
+            )
+            
+            if weather_exists:
+                self.logger.info(f"Weather data already exists for attraction {attraction.id}")
+                return
+            
+            self.logger.info(f"No weather data found for attraction {attraction.id}, fetching from API...")
+            
+            # Fetch weather data using the weather fetcher
+            timezone_str = attraction.city.timezone if attraction.city else "UTC"
+            weather_data = await self.weather_fetcher.fetch(
+                attraction_id=attraction.id,
+                place_id=None,
+                latitude=attraction.latitude if attraction.latitude else 0.0,
+                longitude=attraction.longitude if attraction.longitude else 0.0,
+                timezone_str=timezone_str,
+                attraction_name=attraction.name,
+                city_name=attraction.city.name if attraction.city else None,
+                country=attraction.city.country if attraction.city else None
+            )
+            
+            if not weather_data:
+                self.logger.warning(f"Failed to fetch weather data for attraction {attraction.id}")
+                return
+            
+            self.logger.info(f"Successfully fetched weather data for attraction {attraction.id}")
+            
+            # Store the current weather card data
+            card_data = weather_data.get("card")
+            if card_data:
+                weather_forecast = models.WeatherForecast(
+                    attraction_id=attraction.id,
+                    date_local=card_data.get("date_local"),
+                    temperature_c=card_data.get("temperature_c"),
+                    feels_like_c=card_data.get("feels_like_c"),
+                    min_temperature_c=card_data.get("min_temperature_c"),
+                    max_temperature_c=card_data.get("max_temperature_c"),
+                    condition=card_data.get("summary"),
+                    precipitation_mm=card_data.get("precipitation_mm"),
+                    wind_speed_kph=card_data.get("wind_speed_kph"),
+                    humidity_percent=card_data.get("humidity_percent"),
+                    icon_url=card_data.get("icon_url"),
+                    source=weather_data.get("source", "openweathermap_api"),
+                    created_at=datetime.now(),
+                    updated_at=datetime.now()
+                )
+                session.add(weather_forecast)
+            
+            # Store forecast days if available
+            forecast_days = weather_data.get("forecast_days", [])
+            for forecast_day in forecast_days:
+                day_card = forecast_day.get("card")
+                if day_card:
+                    forecast_forecast = models.WeatherForecast(
+                        attraction_id=attraction.id,
+                        date_local=day_card.get("date_local"),
+                        temperature_c=day_card.get("temperature_c"),
+                        feels_like_c=day_card.get("feels_like_c"),
+                        min_temperature_c=day_card.get("min_temperature_c"),
+                        max_temperature_c=day_card.get("max_temperature_c"),
+                        condition=day_card.get("summary"),
+                        precipitation_mm=day_card.get("precipitation_mm"),
+                        wind_speed_kph=day_card.get("wind_speed_kph"),
+                        humidity_percent=day_card.get("humidity_percent"),
+                        icon_url=day_card.get("icon_url"),
+                        source=weather_data.get("source", "openweathermap_api"),
+                        created_at=datetime.now(),
+                        updated_at=datetime.now()
+                    )
+                    session.add(forecast_forecast)
+            
+            session.commit()
+            self.logger.info(f"Successfully stored weather data for attraction {attraction.id}")
+            
+        except Exception as e:
+            session.rollback()
+            self.logger.error(f"Error fetching and storing weather data for attraction {attraction.id}: {e}")
 
     # -------- Page cards --------
     def build_page_cards(self, attraction: models.Attraction) -> AttractionCardsDTO:
@@ -144,21 +239,47 @@ class AttractionDataService:
                     .all()
                 )
 
-                # If no weather data found from today onwards, get the most recent available
+                # If no weather data found from today onwards, try to fetch and store it
                 if not weather_rows:
-                    weather_rows = (
-                        session.query(models.WeatherForecast)
-                        .filter(models.WeatherForecast.attraction_id == attraction.id)
-                        .order_by(models.WeatherForecast.date_local.desc())
-                        .limit(7)
-                        .all()
-                    )
-                    weather_rows = list(reversed(weather_rows))  # Sort ascending
+                    self.logger.info(f"No weather data found for attraction {attraction.id}, attempting to fetch...")
+                    
+                    # Try to fetch and store weather data
+                    try:
+                        # We need to run async code in sync context, so we'll use asyncio.run
+                        asyncio.run(self._fetch_and_store_weather_data(attraction, session))
+                        
+                        # After fetching, try to get weather data again
+                        weather_rows = (
+                            session.query(models.WeatherForecast)
+                            .filter(
+                                models.WeatherForecast.attraction_id == attraction.id,
+                                models.WeatherForecast.date_local >= today_date
+                            )
+                            .order_by(models.WeatherForecast.date_local.asc())
+                            .all()
+                        )
+                    except Exception as e:
+                        self.logger.error(f"Failed to fetch weather data for attraction {attraction.id}: {e}")
+                        
+                        # If fetching fails, get the most recent available data
+                        weather_rows = (
+                            session.query(models.WeatherForecast)
+                            .filter(models.WeatherForecast.attraction_id == attraction.id)
+                            .order_by(models.WeatherForecast.date_local.desc())
+                            .limit(7)
+                            .all()
+                        )
+                        weather_rows = list(reversed(weather_rows))  # Sort ascending
                 
                 # Build weather card with first day's data (for backward compatibility)
                 weather = None
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Found {len(weather_rows)} weather rows for attraction {attraction.id}")
+                
                 if weather_rows:
                     weather_row = weather_rows[0]
+                    logger.info(f"Using weather data for date: {weather_row.date_local}")
                     weather = WeatherCardDTO(
                         date_local=str(weather_row.date_local) if weather_row.date_local else "",
                         temperature_c=float(weather_row.temperature_c) if weather_row.temperature_c is not None else None,
@@ -171,7 +292,9 @@ class AttractionDataService:
                         humidity_percent=weather_row.humidity_percent if weather_row else None,
                         icon_url=weather_row.icon_url if weather_row else None,
                     )
+                    logger.info(f"Weather DTO created: {weather}")
                 else:
+                    logger.warning(f"No weather data found for attraction {attraction.id}")
                     weather = WeatherCardDTO(
                         date_local="",
                         temperature_c=None,
