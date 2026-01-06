@@ -45,7 +45,7 @@ The Storyboard sitemap system provides comprehensive XML sitemaps for SEO optimi
 
 ```env
 # Sitemap Configuration
-SITE_URL=https://storyboard.com          # Base URL for all sitemap URLs
+SITE_URL=https://tooryst.co          # Base URL for all sitemap URLs
 API_BASE_URL=http://localhost:8000       # Backend API base URL
 SITEMAP_CACHE_TTL=3600                   # Cache TTL for sitemaps (seconds)
 SITEMAP_INDEX_CACHE_TTL=7200            # Cache TTL for sitemap index (seconds)

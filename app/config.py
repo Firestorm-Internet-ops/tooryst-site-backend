@@ -76,7 +76,7 @@ class Settings(BaseSettings):
     BEST_TIME_REFRESH_THRESHOLD_DAYS: int = int(os.getenv("BEST_TIME_REFRESH_THRESHOLD_DAYS", "2"))
 
     # ===== Sitemap Settings =====
-    SITE_URL: str = os.getenv("SITE_URL", "https://storyboard.com")
+    SITE_URL: str = os.getenv("SITE_URL", "https://tooryst.co")
     API_BASE_URL: str = os.getenv("API_BASE_URL", "http://localhost:8000")
     SITEMAP_CACHE_TTL: int = int(os.getenv("SITEMAP_CACHE_TTL", "3600"))  # 1 hour
     SITEMAP_INDEX_CACHE_TTL: int = int(os.getenv("SITEMAP_INDEX_CACHE_TTL", "7200"))  # 2 hours
