@@ -64,7 +64,10 @@ steps:
             }
 
             echo 'Stopping and removing old containers...'
-            sudo docker rm -f tooryst-backend tooryst-celery-beat tooryst-celery-main \$(for i in {1..10}; do echo tooryst-celery-stage$i; done) || true
+            sudo docker rm -f tooryst-backend tooryst-celery-beat tooryst-celery-main || true
+            for i in {1..10}; do
+              sudo docker rm -f tooryst-celery-stage$i || true
+            done
 
             echo 'Starting new API container...'
             sudo docker run -d \
