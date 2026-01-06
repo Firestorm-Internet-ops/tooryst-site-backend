@@ -66,7 +66,7 @@ steps:
             echo 'Stopping and removing old containers...'
             sudo docker rm -f tooryst-backend tooryst-celery-beat tooryst-celery-main || true
             for i in {1..10}; do
-              sudo docker rm -f tooryst-celery-stage$i || true
+              sudo docker rm -f tooryst-celery-stage\$i || true
             done
 
             echo 'Starting new API container...'
@@ -99,12 +99,12 @@ steps:
             for i in {1..10}; do
               sudo docker run -d \
                 --network host \
-                --name tooryst-celery-stage$i \
+                --name tooryst-celery-stage\$i \
                 --restart unless-stopped \
                 --env-file /home/thebettervacation_com/.env \
                 us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA \
-                celery -A app.celery_app:celery_app worker -Q pipeline_stage_$i -c 1 -n stage$i@%h --loglevel=INFO || {
-                echo \"ERROR: Failed to start Celery Stage $i\"
+                celery -A app.celery_app:celery_app worker -Q pipeline_stage_\$i -c 1 -n stage\$i@%h --loglevel=INFO || {
+                echo \"ERROR: Failed to start Celery Stage \$i\"
                 exit 1
               }
             done
