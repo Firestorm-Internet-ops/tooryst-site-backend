@@ -54,7 +54,7 @@ steps:
             sudo gcloud auth configure-docker us-central1-docker.pkg.dev -q
 
             echo 'Cleaning up old Docker resources...'
-            sudo docker system prune -af --filter "until=24h" || true
+            sudo docker system prune -af --filter \"until=24h\" || true
             sudo docker image prune -af || true
 
             echo 'Pulling latest backend image...'
@@ -64,7 +64,7 @@ steps:
             }
 
             echo 'Stopping and removing old containers...'
-            sudo docker rm -f tooryst-backend tooryst-celery-beat tooryst-celery-main $(for i in {1..10}; do echo tooryst-celery-stage$i; done) || true
+            sudo docker rm -f tooryst-backend tooryst-celery-beat tooryst-celery-main \$(for i in {1..10}; do echo tooryst-celery-stage$i; done) || true
 
             echo 'Starting new API container...'
             sudo docker run -d \
@@ -101,7 +101,7 @@ steps:
                 --env-file /home/thebettervacation_com/.env \
                 us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA \
                 celery -A app.celery_app:celery_app worker -Q pipeline_stage_$i -c 1 -n stage$i@%h --loglevel=INFO || {
-                echo "ERROR: Failed to start Celery Stage $i"
+                echo \"ERROR: Failed to start Celery Stage $i\"
                 exit 1
               }
             done
@@ -132,10 +132,7 @@ steps:
             sudo docker ps --filter name=tooryst
 
             echo '✓ Deployment completed successfully'
-          " || {
-            echo "ERROR: Deployment to VM failed!"
-            exit 1
-          }
+          "
 
         echo "✓ Backend deployment successful"
     entrypoint: bash

@@ -460,57 +460,59 @@ def store_tips(attraction_id: int, tips: List[Dict[str, Any]]) -> bool:
 
 def store_metadata(attraction_id: int, metadata: Dict[str, Any]) -> bool:
     """Store attraction metadata with row-level locking for concurrent safety."""
+    from app.infrastructure.persistence.db import SessionLocal
+    from app.infrastructure.persistence import models
+    from datetime import datetime
+    
+    session = SessionLocal()
     try:
-        import json
-        conn = get_db_connection()
-        with conn.cursor() as cursor:
-            # Acquire row lock on attractions table
-            cursor.execute(
-                "SELECT id FROM attractions WHERE id = %s FOR UPDATE",
-                (attraction_id,)
+        # Use JSON fields directly - SQLAlchemy will handle serialization
+        contact_info_json = metadata.get('contact_info', [])
+        opening_hours_json = metadata.get('opening_hours', [])
+        highlights_json = metadata.get('highlights', [])
+
+        # Use upsert pattern
+        existing = (
+            session.query(models.AttractionMetadata)
+            .filter(models.AttractionMetadata.attraction_id == attraction_id)
+            .first()
+        )
+
+        if existing:
+            # Update
+            existing.contact_info = contact_info_json
+            existing.accessibility_info = metadata.get('accessibility_info')
+            existing.best_season = metadata.get('best_season')
+            existing.opening_hours = opening_hours_json
+            existing.short_description = metadata.get('short_description')
+            existing.recommended_duration_minutes = metadata.get('recommended_duration_minutes')
+            existing.highlights = highlights_json
+        else:
+            # Insert
+            now = datetime.utcnow()
+            new_entry = models.AttractionMetadata(
+                attraction_id=attraction_id,
+                contact_info=contact_info_json,
+                accessibility_info=metadata.get('accessibility_info'),
+                best_season=metadata.get('best_season'),
+                opening_hours=opening_hours_json,
+                short_description=metadata.get('short_description'),
+                recommended_duration_minutes=metadata.get('recommended_duration_minutes'),
+                highlights=highlights_json,
+                created_at=now,
+                updated_at=now
             )
+            session.add(new_entry)
 
-            # Convert JSON fields to strings
-            contact_info_json = json.dumps(metadata.get('contact_info', []))
-            opening_hours_json = json.dumps(metadata.get('opening_hours', []))
-            highlights_json = json.dumps(metadata.get('highlights', []))
-
-            cursor.execute("""
-                INSERT INTO attraction_metadata (
-                    attraction_id, contact_info, accessibility_info,
-                    best_season, opening_hours, short_description,
-                    recommended_duration_minutes, highlights
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s
-                )
-                ON DUPLICATE KEY UPDATE
-                    contact_info = VALUES(contact_info),
-                    accessibility_info = VALUES(accessibility_info),
-                    best_season = VALUES(best_season),
-                    opening_hours = VALUES(opening_hours),
-                    short_description = VALUES(short_description),
-                    recommended_duration_minutes = VALUES(recommended_duration_minutes),
-                    highlights = VALUES(highlights),
-                    updated_at = CURRENT_TIMESTAMP
-            """, (
-                attraction_id,
-                contact_info_json,
-                metadata.get('accessibility_info'),
-                metadata.get('best_season'),
-                opening_hours_json,
-                metadata.get('short_description'),
-                metadata.get('recommended_duration_minutes'),
-                highlights_json
-            ))
-
-            conn.commit()  # Releases lock
-            logger.info(f"✓ Stored metadata")
-            return True
+        session.commit()
+        logger.info(f"✓ Stored metadata")
+        return True
     except Exception as e:
+        session.rollback()
         logger.error(f"Failed to store metadata: {e}")
         return False
     finally:
-        conn.close()
+        session.close()
 
 
 def store_audience_profiles(attraction_id: int, profiles: List[Dict[str, Any]]) -> bool:

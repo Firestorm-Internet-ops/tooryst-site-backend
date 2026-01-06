@@ -307,10 +307,10 @@ def store_metadata(attraction_id: int, metadata: Dict[str, Any]) -> bool:
     try:
         import json
         
-        # Convert JSON fields
-        contact_info_json = json.dumps(metadata.get('contact_info', {}))
-        opening_hours_json = json.dumps(metadata.get('opening_hours', []))
-        highlights_json = json.dumps(metadata.get('highlights', []))
+        # Use JSON fields directly - SQLAlchemy will handle serialization
+        contact_info_json = metadata.get('contact_info', [])
+        opening_hours_json = metadata.get('opening_hours', [])
+        highlights_json = metadata.get('highlights', [])
         
         # Use upsert pattern
         existing = (
