@@ -61,7 +61,7 @@ def create_app() -> FastAPI:
         allow_origins=[
             "https://tooryst.co",
             "https://www.tooryst.co",
-            "https://staging.tooryst.co"
+            "https://staging.tooryst.co",
             "http://localhost:3000",
             "http://localhost:3001",
         ],
