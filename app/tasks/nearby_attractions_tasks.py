@@ -132,21 +132,23 @@ def get_attractions_needing_nearby_update() -> List[Dict[str, Any]]:
 
 
 @celery_app.task(name="app.tasks.nearby_attractions_tasks.update_nearby_attractions_for_attraction")
-def update_nearby_attractions_for_attraction(attraction_id: int) -> Dict[str, Any]:
+def update_nearby_attractions_for_attraction(attraction_id: int, force_refresh: bool = False) -> Dict[str, Any]:
     """Update nearby attractions for a specific attraction.
     
     This task is triggered when:
     1. A new attraction is added to a city
     2. An attraction's coordinates are updated
     3. Periodic refresh task runs
+    4. Explicit refresh requested via API
     
     Args:
         attraction_id: ID of the attraction to update nearby attractions for
+        force_refresh: Whether to force a refresh from Google Places
     
     Returns:
         Dictionary with status and result details
     """
-    logger.info(f"Starting nearby attractions update for attraction {attraction_id}")
+    logger.info(f"Starting nearby attractions update for attraction {attraction_id} (force={force_refresh})")
     
     session = SessionLocal()
     try:
@@ -183,7 +185,8 @@ def update_nearby_attractions_for_attraction(attraction_id: int) -> Dict[str, An
                     city_name=city_obj.name,
                     latitude=float(attraction_obj.latitude),
                     longitude=float(attraction_obj.longitude),
-                    place_id=attraction_obj.place_id
+                    place_id=attraction_obj.place_id,
+                    force_google=force_refresh
                 )
             )
         finally:

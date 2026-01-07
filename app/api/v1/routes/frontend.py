@@ -2,7 +2,9 @@
 import logging
 from typing import List, Optional
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends, status
+from sqlalchemy.orm import Session
+from app.infrastructure.persistence.db import SessionLocal, get_db
 from pydantic import BaseModel
 from sqlalchemy import func, desc, or_
 
@@ -541,21 +543,22 @@ async def get_attraction(
             attraction_id=attr.id
         ).limit(tips_limit).all()
 
-        # Audience profiles: usually 5-10, but add limit for safety
+        # Audience profiles
         audience = session.query(models.AudienceProfile).filter_by(
             attraction_id=attr.id
-        ).limit(20).all()
+        ).limit(5).all()
 
-        # Limit videos
+        # Social videos
         videos = session.query(models.SocialVideo).filter_by(
             attraction_id=attr.id
         ).limit(videos_limit).all()
+
         # Query nearby attractions with left join to attractions table for rating/review_count
-        # LIMIT to prevent memory issues with attractions that have many nearby places
         nearby = session.query(
             models.NearbyAttraction,
             models.Attraction.rating,
-            models.Attraction.review_count
+            models.Attraction.review_count,
+            models.Attraction.slug
         ).filter(
             models.NearbyAttraction.attraction_id == attr.id
         ).outerjoin(
@@ -563,31 +566,29 @@ async def get_attraction(
             models.NearbyAttraction.nearby_attraction_id == models.Attraction.id
         ).limit(nearby_limit).all()
         
-        # Build nearby attractions list (enrichment happens asynchronously in background)
+        # Build nearby attractions list
         enriched_nearby = []
-        for n, attr_rating, attr_review_count in nearby:
+        for n, attr_rating, attr_review_count, attr_slug in nearby:
             nearby_item = {
                 'nearby_attraction': n,
+                'slug': n.slug or attr_slug,
                 'rating': float(n.rating) if n.rating else (float(attr_rating) if attr_rating else None),
                 'review_count': n.review_count if n.review_count else (attr_review_count if attr_review_count else 0),
                 'image_url': n.image_url
             }
-            
-            # If nearby attraction is from Google Places (nearby_attraction_id is NULL) and missing data,
-            # queue enrichment task to fetch from Google Places API
-            if n.nearby_attraction_id is None and n.place_id and (not n.rating or not n.review_count or not n.image_url):
-                try:
-                    from app.tasks.nearby_attractions_tasks import enrich_nearby_attraction_from_google
-                    enrich_nearby_attraction_from_google.delay(n.id)
-                    logger.debug(f"Queued enrichment task for nearby attraction {n.name}")
-                except Exception as e:
-                    logger.warning(f"Failed to queue enrichment for {n.name}: {e}")
-            
             enriched_nearby.append(nearby_item)
         
         widgets = session.query(models.WidgetConfig).filter_by(attraction_id=attr.id).first()
         
-        # Build response with size validation
+        # Trigger background refresh for nearby attractions
+        try:
+            from app.tasks.nearby_attractions_tasks import update_nearby_attractions_for_attraction
+            update_nearby_attractions_for_attraction.delay(attr.id, force_refresh=True)
+            logger.debug(f"Queued background refresh for nearby attractions of {attr.name}")
+        except Exception as e:
+            logger.warning(f"Failed to queue background refresh for {attr.name}: {e}")
+
+        # Build response
         response_data = {
             "id": attr.id,
             "slug": attr.slug,
@@ -600,6 +601,16 @@ async def get_attraction(
             "place_id": attr.place_id,
             "rating": float(attr.rating) if attr.rating else None,
             "review_count": attr.review_count if attr.review_count else 0,
+            
+            "visitor_info": {
+                "contact_info": metadata.contact_info if metadata and metadata.contact_info else {},
+                "accessibility_info": metadata.accessibility_info if metadata else None,
+                "best_season": metadata.best_season if metadata else None,
+                "opening_hours": metadata.opening_hours if metadata and metadata.opening_hours else [],
+                "short_description": metadata.short_description if metadata else None,
+                "recommended_duration_minutes": metadata.recommended_duration_minutes if metadata else None,
+                "highlights": metadata.highlights if metadata and metadata.highlights else []
+            } if metadata else None,
             
             "hero_images": [
                 {
@@ -663,16 +674,6 @@ async def get_attraction(
                 "longitude": float(map_data.longitude) if map_data.longitude else None,
                 "address": map_data.address
             } if map_data and map_data.static_map_url else None,
-            
-            "visitor_info": {
-                "contact_info": metadata.contact_info if metadata.contact_info else {},
-                "accessibility_info": metadata.accessibility_info,
-                "best_season": metadata.best_season,
-                "opening_hours": metadata.opening_hours if metadata.opening_hours else [],
-                "short_description": metadata.short_description,
-                "recommended_duration_minutes": metadata.recommended_duration_minutes,
-                "highlights": metadata.highlights if metadata.highlights else []
-            } if metadata else None,
             
             "reviews": {
                 "summary": {
@@ -784,6 +785,66 @@ async def get_attraction(
         raise HTTPException(status_code=500, detail=f"Error loading attraction: {str(e)}")
     finally:
         session.close()
+
+
+@router.get("/attractions/{slug}/nearby")
+async def get_nearby_attractions(
+    slug: str,
+    limit: int = Query(default=20, ge=1, le=50, description="Max nearby attractions to return"),
+    session: Session = Depends(get_db)
+):
+    """
+    Get nearby attractions for a specific attraction and trigger a background refresh.
+    """
+    # Get attraction
+    attr = (
+        session.query(models.Attraction)
+        .filter(models.Attraction.slug == slug)
+        .first()
+    )
+
+    if not attr:
+        raise HTTPException(status_code=404, detail=f"Attraction '{slug}' not found")
+
+    # Query current nearby attractions from DB
+    nearby = session.query(
+        models.NearbyAttraction,
+        models.Attraction.rating,
+        models.Attraction.review_count,
+        models.Attraction.slug
+    ).filter(
+        models.NearbyAttraction.attraction_id == attr.id
+    ).outerjoin(
+        models.Attraction,
+        models.NearbyAttraction.nearby_attraction_id == models.Attraction.id
+    ).limit(limit).all()
+
+    # Build results
+    results = []
+    for n, attr_rating, attr_review_count, attr_slug in nearby:
+        results.append({
+            "id": n.id,
+            "name": n.name,
+            "slug": n.slug or attr_slug,
+            "rating": float(n.rating) if n.rating else (float(attr_rating) if attr_rating else None),
+            "review_count": n.review_count if n.review_count else (attr_review_count if attr_review_count else 0),
+            "image_url": n.image_url,
+            "distance_text": n.distance_text,
+            "distance_km": float(n.distance_km) if n.distance_km else 0.0,
+            "walking_time_minutes": n.walking_time_minutes,
+            "vicinity": n.vicinity,
+            "link": n.link
+        })
+
+    # Trigger background refresh
+    try:
+        from app.tasks.nearby_attractions_tasks import update_nearby_attractions_for_attraction
+        update_nearby_attractions_for_attraction.delay(attr.id, force_refresh=True)
+        logger.debug(f"Queued background refresh for nearby attractions of {attr.name}")
+    except Exception as e:
+        logger.warning(f"Failed to queue background refresh for {attr.name}: {e}")
+
+    return results
 
 
 # Search Models

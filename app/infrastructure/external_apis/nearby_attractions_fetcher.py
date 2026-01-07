@@ -29,13 +29,15 @@ class NearbyAttractionsFetcherImpl:
         city_name: str,
         latitude: float,
         longitude: float,
-        place_id: Optional[str] = None
+        place_id: Optional[str] = None,
+        force_google: bool = False
     ) -> Optional[Dict[str, Any]]:
         """Fetch nearby attractions.
         
         Strategy:
         1. Get nearby attractions from our database (same city, within radius)
-        2. Fill remaining slots with Google Places nearby search
+        2. Fill remaining slots with Google Places nearby search 
+           (or always call Google if force_google is True)
         3. Calculate distances and create links
         
         Args:
@@ -45,6 +47,7 @@ class NearbyAttractionsFetcherImpl:
             latitude: Latitude of the attraction
             longitude: Longitude of the attraction
             place_id: Google Place ID (optional)
+            force_google: Whether to force a refresh from Google Places
         
         Returns:
             Dictionary with:
@@ -72,10 +75,10 @@ class NearbyAttractionsFetcherImpl:
         
         logger.info(f"Found {len(all_nearby)} nearby attractions in database")
         
-        # Strategy 2: Fill remaining with Google Places
-        if len(all_nearby) < self.target_count:
-            remaining = self.target_count - len(all_nearby)
-            logger.info(f"Fetching {remaining} more from Google Places")
+        # Strategy 2: Fill remaining with Google Places (or force refresh)
+        if force_google or len(all_nearby) < self.target_count:
+            remaining = self.target_count - len(all_nearby) if not force_google else self.target_count
+            logger.info(f"Fetching {remaining} from Google Places (force={force_google})")
             
             google_nearby = await self._get_from_google(
                 latitude=latitude,
