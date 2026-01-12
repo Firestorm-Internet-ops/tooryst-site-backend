@@ -1,88 +1,62 @@
 steps:
-  # Step 0: Build Docker image with error handling
+  # Step 0: Build Docker image
   - name: gcr.io/cloud-builders/docker
     args:
       - '-c'
       - |
-        set -e  # Exit immediately if any command fails
-        set -o pipefail  # Catch errors in pipes
-
-        echo "Starting Docker build for backend..."
-
+        set -e
+        echo "Starting Docker build..."
         docker build \
           -t us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA \
           -t us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:latest \
-          -f Dockerfile \
-          . || {
-            echo "ERROR: Docker build failed!"
-            exit 1
-          }
-
-        echo "✓ Docker build completed successfully"
-
-        # Verify image was created
-        docker images | grep us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend || {
-          echo "ERROR: Docker image not found after build!"
-          exit 1
-        }
-
-        echo "✓ Docker image verified"
+          -f Dockerfile .
     entrypoint: bash
 
-  # Step 1: Push Docker image to Artifact Registry
+  # Step 1: Push Docker image
   - name: gcr.io/cloud-builders/docker
     args:
       - push
       - '--all-tags'
       - us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend
 
-  # Step 2: Deploy to VM via SSH
+  # Step 2: Deploy to VM (The 1:1 Logic Replication)
   - name: gcr.io/cloud-builders/gcloud
     args:
       - '-c'
       - |
-        set -e  # Exit immediately if any command fails
-
-        echo "Deploying to VM tooryst-backend-vm..."
+        set -e
+        echo "Deploying to VM..."
 
         gcloud compute ssh tooryst-backend-vm \
           --zone=us-central1-c \
           --command "
             set -e
 
-            echo 'Configuring Docker authentication...'
+            # 1. AUTHENTICATE
             sudo gcloud auth configure-docker us-central1-docker.pkg.dev -q
 
-            echo 'Cleaning up old Docker resources...'
-            sudo docker system prune -af --filter \"until=24h\" || true
-            sudo docker image prune -af || true
+            # 2. NUCLEAR CLEANUP (Fixes the Zombie issue)
+            # Stops and removes ANY container with 'tooryst' in the name
+            echo 'Stopping all existing Tooryst containers...'
+            sudo docker ps -a --filter name=tooryst -q | xargs -r sudo docker rm -f
+            
+            # Prune old images to save space
+            sudo docker image prune -af
 
-            echo 'Pulling latest backend image...'
-            sudo docker pull us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA || {
-              echo 'ERROR: Failed to pull Docker image'
-              exit 1
-            }
+            # 3. PULL NEW IMAGE
+            echo 'Pulling latest image...'
+            sudo docker pull us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA
 
-            echo 'Stopping and removing old containers...'
-            sudo docker rm -f tooryst-backend tooryst-celery-beat tooryst-celery-main || true
-            for i in {1..10}; do
-              sudo docker rm -f tooryst-celery-stage\$i || true
-            done
-
-            echo 'Starting new API container...'
+            # 4. START BACKEND API (Matches 'Starting Backend API...')
+            echo 'Starting Backend API...'
             sudo docker run -d \
               --network host \
               --name tooryst-backend \
               --restart unless-stopped \
               --env-file /home/thebettervacation_com/.env \
-              us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA || {
-              echo 'ERROR: Failed to start API container'
-              exit 1
-            }
+              us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA
 
-            echo 'Waiting for API to start...'
-            sleep 5
-
+            # 5. START CELERY BEAT (Matches 'Starting Celery Beat...')
             echo 'Starting Celery Beat...'
             sudo docker run -d \
               --network host \
@@ -90,12 +64,22 @@ steps:
               --restart unless-stopped \
               --env-file /home/thebettervacation_com/.env \
               us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA \
-              celery -A app.celery_app:celery_app beat --loglevel=INFO || {
-              echo 'ERROR: Failed to start Celery Beat'
-              exit 1
-            }
+              celery -A app.celery_app:celery_app beat --loglevel=INFO
 
-            echo 'Starting Celery Stage Workers...'
+            # 6. START CELERY MAIN WORKER (Matches 'Main Pipeline Worker')
+            # Handles 'pipeline' and 'celery' queues
+            echo 'Starting Main Worker...'
+            sudo docker run -d \
+              --network host \
+              --name tooryst-celery-main \
+              --restart unless-stopped \
+              --env-file /home/thebettervacation_com/.env \
+              us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA \
+              celery -A app.celery_app:celery_app worker -Q pipeline,celery -c 4 -n main@%h --loglevel=INFO
+
+            # 7. START STAGE WORKERS 1-10 (Matches Stages 1-10 logic)
+            # Loops 1 through 10 creating a unique container for each
+            echo 'Starting Stage Workers 1-10...'
             for i in {1..10}; do
               sudo docker run -d \
                 --network host \
@@ -103,41 +87,23 @@ steps:
                 --restart unless-stopped \
                 --env-file /home/thebettervacation_com/.env \
                 us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA \
-                celery -A app.celery_app:celery_app worker -Q pipeline_stage_\$i -c 1 -n stage\$i@%h --loglevel=INFO || {
-                echo \"ERROR: Failed to start Celery Stage \$i\"
-                exit 1
-              }
+                celery -A app.celery_app:celery_app worker -Q pipeline_stage_\$i -c 1 -n stage\$i@%h --loglevel=INFO
             done
 
-            echo 'Starting Celery Main Worker...'
-            sudo docker run -d \
-              --network host \
-              --name tooryst-celery-main \
-              --restart unless-stopped \
-              --env-file /home/thebettervacation_com/.env \
-              us-central1-docker.pkg.dev/toorists/tooryst-repo-backend/backend:$SHORT_SHA \
-              celery -A app.celery_app:celery_app worker -Q pipeline,celery -c 4 -n main@%h --loglevel=INFO || {
-              echo 'ERROR: Failed to start Celery Main Worker'
-              exit 1
-            }
-
-            echo 'Waiting for services to stabilize...'
-            sleep 3
-
-            echo 'Performing health check...'
+            # 8. VERIFICATION
+            echo 'Waiting for services to initialize...'
+            sleep 5
+            
+            echo 'Running Health Check...'
             if curl -fsS http://127.0.0.1:8000/api/v1/health >/dev/null; then
-              echo '✓ Health check passed'
+               echo '✓ Backend Health: OK'
             else
-              echo 'WARNING: Health check failed, but continuing...'
+               echo 'WARNING: Backend Health check failed.'
             fi
 
-            echo 'Checking running containers...'
-            sudo docker ps --filter name=tooryst
-
-            echo '✓ Deployment completed successfully'
+            echo 'Deployment Complete. Active Containers:'
+            sudo docker ps --filter name=tooryst --format 'table {{.Names}}\t{{.Status}}\t{{.Command}}'
           "
-
-        echo "✓ Backend deployment successful"
     entrypoint: bash
 
 images:
