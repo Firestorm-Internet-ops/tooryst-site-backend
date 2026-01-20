@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+"""
+One-time migration script to process all existing hero images to GCS.
+
+This script:
+1. Fetches all attractions with place_id
+2. For each attraction, downloads photos from Google Places API
+3. Converts to WebP format (1600px for hero slider, 400px card for first image only)
+4. Uploads to GCS bucket
+5. Updates database with GCS URLs
+
+Usage:
+    python scripts/migrate_hero_images_to_gcs.py [--batch-size 35] [--start-from 0] [--dry-run]
+
+Options:
+    --batch-size: Number of attractions to process (default: all)
+    --start-from: Start from this attraction index (default: 0)
+    --dry-run: Don't actually upload or update database
+"""
+import asyncio
+import argparse
+import logging
+import sys
+from datetime import datetime
+from pathlib import Path
+
+# Add the backend directory to the path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from app.infrastructure.persistence.db import SessionLocal
+from app.infrastructure.persistence import models
+from app.tasks.hero_images_refresh_tasks import process_card_image
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(f'migration_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+    ]
+)
+logger = logging.getLogger(__name__)
+
+
+def get_all_attractions():
+    """Get all attractions with place_id."""
+    session = SessionLocal()
+    try:
+        attractions = (
+            session.query(models.Attraction, models.City)
+            .join(models.City, models.Attraction.city_id == models.City.id)
+            .filter(models.Attraction.place_id.isnot(None))
+            .filter(models.Attraction.place_id != "")
+            .order_by(models.Attraction.id)
+            .all()
+        )
+
+        result = []
+        for attraction, city in attractions:
+            result.append({
+                'id': attraction.id,
+                'place_id': attraction.place_id,
+                'name': attraction.name,
+                'city_name': city.name,
+                'slug': attraction.slug
+            })
+
+        return result
+    finally:
+        session.close()
+
+
+async def migrate_single_attraction(attraction: dict, dry_run: bool = False) -> dict:
+    """Migrate a single attraction's hero images to GCS."""
+    if dry_run:
+        logger.info(f"[DRY RUN] Would process: {attraction['name']}")
+        return {"status": "dry_run", "attraction": attraction['name']}
+
+    try:
+        result = await process_card_image(
+            attraction_id=attraction['id'],
+            place_id=attraction['place_id'],
+            attraction_name=attraction['name']
+        )
+        return {
+            "attraction": attraction['name'],
+            "slug": attraction['slug'],
+            **result
+        }
+    except Exception as e:
+        logger.error(f"Error processing {attraction['name']}: {e}")
+        return {
+            "attraction": attraction['name'],
+            "slug": attraction['slug'],
+            "status": "error",
+            "error": str(e)
+        }
+
+
+async def run_migration(batch_size: int = None, start_from: int = 0, dry_run: bool = False):
+    """Run the migration for all attractions."""
+    logger.info("=" * 70)
+    logger.info("Starting Hero Images GCS Migration")
+    logger.info("=" * 70)
+
+    # Get all attractions
+    attractions = get_all_attractions()
+    total = len(attractions)
+    logger.info(f"Found {total} attractions with place_id")
+
+    # Apply start_from and batch_size
+    if start_from > 0:
+        attractions = attractions[start_from:]
+        logger.info(f"Starting from index {start_from}")
+
+    if batch_size:
+        attractions = attractions[:batch_size]
+        logger.info(f"Processing batch of {len(attractions)} attractions")
+
+    # Process attractions
+    success_count = 0
+    error_count = 0
+    no_photos_count = 0
+    results = []
+
+    for idx, attraction in enumerate(attractions):
+        global_idx = start_from + idx
+        logger.info(f"[{global_idx + 1}/{total}] Processing: {attraction['name']} ({attraction['city_name']})")
+
+        result = await migrate_single_attraction(attraction, dry_run)
+        results.append(result)
+
+        if result.get('status') == 'success':
+            success_count += 1
+            logger.info(f"  ✓ Success: {result.get('count', 0)} images processed")
+        elif result.get('status') == 'no_photos':
+            no_photos_count += 1
+            logger.warning(f"  ⚠ No photos found")
+        elif result.get('status') == 'dry_run':
+            pass
+        else:
+            error_count += 1
+            logger.error(f"  ✗ Error: {result.get('error', 'Unknown error')}")
+
+        # Add delay between attractions to respect rate limits
+        if not dry_run and idx < len(attractions) - 1:
+            await asyncio.sleep(1)
+
+    # Summary
+    logger.info("=" * 70)
+    logger.info("Migration Complete")
+    logger.info("=" * 70)
+    logger.info(f"Total processed: {len(attractions)}")
+    logger.info(f"Success: {success_count}")
+    logger.info(f"No photos: {no_photos_count}")
+    logger.info(f"Errors: {error_count}")
+
+    if error_count > 0:
+        logger.info("\nFailed attractions:")
+        for r in results:
+            if r.get('status') == 'error':
+                logger.info(f"  - {r['attraction']}: {r.get('error', 'Unknown')}")
+
+    return {
+        "total": len(attractions),
+        "success": success_count,
+        "no_photos": no_photos_count,
+        "errors": error_count,
+        "results": results
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Migrate hero images to GCS')
+    parser.add_argument('--batch-size', type=int, default=None,
+                        help='Number of attractions to process (default: all)')
+    parser.add_argument('--start-from', type=int, default=0,
+                        help='Start from this attraction index (default: 0)')
+    parser.add_argument('--dry-run', action='store_true',
+                        help="Don't actually upload or update database")
+
+    args = parser.parse_args()
+
+    # Run migration
+    result = asyncio.run(run_migration(
+        batch_size=args.batch_size,
+        start_from=args.start_from,
+        dry_run=args.dry_run
+    ))
+
+    # Exit with error code if there were errors
+    if result['errors'] > 0:
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

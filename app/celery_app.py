@@ -22,7 +22,9 @@ celery_app = Celery(
         "app.tasks.file_watcher_tasks",
         "app.tasks.youtube_retry_tasks",
         "app.tasks.reddit_tip_fetcher_task",
-        "app.tasks.nearby_attractions_tasks"
+        "app.tasks.nearby_attractions_tasks",
+        "app.tasks.hero_images_refresh_tasks",
+        "app.tasks.hero_images_prefetch_tasks",
     ]
 )
 
@@ -134,6 +136,16 @@ celery_app.conf.beat_schedule = {
         "task": "app.tasks.nearby_attractions_tasks.refresh_all_nearby_attractions",
         "schedule": crontab(
             hour=2,
+            minute=0
+        ),
+    },
+
+    # Card Images GCS Refresh - Refresh card images (1 per attraction) to GCS (Daily at 3 AM)
+    # Processes ~11 attractions/day for a 29-day refresh cycle
+    "refresh-card-images-gcs-daily": {
+        "task": "app.tasks.hero_images_refresh_tasks.refresh_card_images_batch",
+        "schedule": crontab(
+            hour=3,
             minute=0
         ),
     },

@@ -87,6 +87,11 @@ class HeroImage(Base):
     url = Column(String(1024), nullable=False)
     alt_text = Column(String(512))
     position = Column(Integer, default=0)
+    # GCS storage columns
+    google_photo_reference = Column(String(512), nullable=True, index=True)
+    gcs_url_card = Column(String(512), nullable=True)
+    gcs_url_hero = Column(String(512), nullable=True)
+    last_refreshed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime)
 
     attraction = relationship("Attraction", back_populates="hero_images")

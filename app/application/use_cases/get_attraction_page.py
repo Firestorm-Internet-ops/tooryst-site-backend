@@ -44,7 +44,7 @@ class GetAttractionPageUseCase:
         country = city.country if city else None
         
         # Build DTO (for now, minimal - will be expanded with card data)
-        return self._data_service.build_page_dto(
+        return await self._data_service.build_page_dto(
             attraction=attraction,
             city_name=city_name,
             country=country,

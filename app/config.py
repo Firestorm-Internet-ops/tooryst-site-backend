@@ -12,6 +12,9 @@ from typing import Optional
 class Settings(BaseSettings):
     """Application settings with environment variable support."""
 
+    # ===== Repository Configuration =====
+    USE_SQL_REPOSITORIES: bool = os.getenv("USE_SQL_REPOSITORIES", "true").lower() == "true"
+
     # ===== Image & Media =====
     PHOTO_WIDTH_SMALL: int = int(os.getenv("PHOTO_WIDTH_SMALL", "400"))
     PHOTO_WIDTH_LARGE: int = int(os.getenv("PHOTO_WIDTH_LARGE", "800"))
@@ -20,6 +23,20 @@ class Settings(BaseSettings):
     MAP_SNAPSHOT_WIDTH: int = int(os.getenv("MAP_SNAPSHOT_WIDTH", "800"))
     MAP_SNAPSHOT_HEIGHT: int = int(os.getenv("MAP_SNAPSHOT_HEIGHT", "600"))
     HERO_IMAGE_MAX_WIDTH: int = int(os.getenv("HERO_IMAGE_MAX_WIDTH", "1600"))
+
+    # ===== GCS Image Storage =====
+    GCS_BUCKET_NAME: str = os.getenv("GCS_BUCKET_NAME", "tooryst-hero-images")
+    GCS_PROJECT_ID: str = os.getenv("GCS_PROJECT_ID", "")
+    GCS_CDN_URL: str = os.getenv("GCS_CDN_URL", "https://images.tooryst.co")
+    IMAGE_SIZE_CARD: int = int(os.getenv("IMAGE_SIZE_CARD", "400"))
+    IMAGE_SIZE_HERO: int = int(os.getenv("IMAGE_SIZE_HERO", "1600"))
+    IMAGE_QUALITY_WEBP: int = int(os.getenv("IMAGE_QUALITY_WEBP", "85"))
+    # Card image refresh (GCS - persistent, 29-day cycle)
+    CARD_IMAGES_DAILY_BATCH_SIZE: int = int(os.getenv("CARD_IMAGES_DAILY_BATCH_SIZE", "40"))
+    CARD_IMAGE_REFRESH_DAYS: int = int(os.getenv("CARD_IMAGE_REFRESH_DAYS", "29"))
+    CARD_IMAGE_REFRESH_TARGET_DAYS: int = int(os.getenv("CARD_IMAGE_REFRESH_TARGET_DAYS", "25"))
+    # Hero carousel cache (Redis - temporary, 1-hour TTL)
+    HERO_IMAGES_CACHE_TTL: int = int(os.getenv("HERO_IMAGES_CACHE_TTL", "3600"))
 
     # ===== Distance & Location =====
     NEARBY_MAX_DISTANCE_KM: float = float(os.getenv("NEARBY_MAX_DISTANCE_KM", "10.0"))

@@ -1,6 +1,5 @@
-"""Attraction API routes - thin layer delegating to use cases.
-Follows Single Responsibility Principle - only handles HTTP concerns."""
 from fastapi import APIRouter, HTTPException, Depends
+from dataclasses import asdict
 from app.core.dependencies import (
     get_attraction_page_use_case,
     get_attraction_sections_use_case,
@@ -35,7 +34,7 @@ async def get_attraction_page(
         city=page_dto.city,
         country=page_dto.country,
         timezone=page_dto.timezone,
-        cards=page_dto.cards,
+        cards=asdict(page_dto.cards) if page_dto.cards else None,
     )
 
 
@@ -60,5 +59,5 @@ async def get_attraction_sections(
         name=sections_dto.name,
         city=sections_dto.city,
         country=sections_dto.country,
-        sections=sections_dto.sections,
+        sections=[asdict(s) for s in sections_dto.sections],
     )

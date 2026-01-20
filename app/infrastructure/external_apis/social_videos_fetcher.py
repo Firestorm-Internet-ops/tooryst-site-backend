@@ -58,6 +58,10 @@ class SocialVideosFetcherImpl:
         ]
         
         for query in travel_queries:
+            if self.is_quota_exceeded():
+                logger.warning("Quota exceeded, stopping fetch")
+                break
+
             if len(all_videos) >= self.target_count:
                 break
             
@@ -86,6 +90,9 @@ class SocialVideosFetcherImpl:
             ]
             
             for query in general_queries:
+                if self.is_quota_exceeded():
+                    break
+
                 if len(all_videos) >= self.target_count:
                     break
                 

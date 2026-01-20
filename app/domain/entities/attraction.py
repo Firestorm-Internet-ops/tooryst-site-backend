@@ -21,6 +21,14 @@ class Attraction:
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     
+    @property
+    def latitude(self) -> float:
+        return self.coordinates.latitude
+        
+    @property
+    def longitude(self) -> float:
+        return self.coordinates.longitude
+
     def is_valid(self) -> bool:
         """Validate attraction business rules."""
         return bool(

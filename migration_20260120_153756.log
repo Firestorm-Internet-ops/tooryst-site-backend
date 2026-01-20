@@ -1,0 +1,17 @@
+2026-01-20 15:37:56,375 - INFO - ======================================================================
+2026-01-20 15:37:56,375 - INFO - Starting Hero Images GCS Migration
+2026-01-20 15:37:56,375 - INFO - ======================================================================
+2026-01-20 15:37:56,428 - INFO - Found 966 attractions with place_id
+2026-01-20 15:37:56,428 - INFO - Processing batch of 3 attractions
+2026-01-20 15:37:56,428 - INFO - [1/966] Processing: Amaze Amsterdam (Amsterdam)
+2026-01-20 15:37:56,428 - INFO - Fetching photo reference for Amaze Amsterdam
+2026-01-20 15:37:56,952 - INFO - HTTP Request: GET https://places.googleapis.com/v1/places/ChIJ2xlnX77jxUcR2WgrWg7Ehxk "HTTP/1.1 200 OK"
+2026-01-20 15:37:56,953 - INFO - Found 10 photo references for ChIJ2xlnX77jxUcR2WgrWg7Ehxk
+2026-01-20 15:37:57,215 - INFO - HTTP Request: GET https://places.googleapis.com/v1/places/ChIJ2xlnX77jxUcR2WgrWg7Ehxk/photos/AcnlKN0wAtTqshS7lBUffBDyjG7rZ6_lay8N10ZUBm-odgX_elmMwVSfgW0UhkZQM5HSB_FyXE_6Mc49411QNP-xjjeQbkRa3yREQfCtYdw3YB-zVNaZMSw7VjHeUIyx8ILRdT-VF7rNfdJb3SP6GpIzps1vkfsODCXDpcAN8zHA5oGbPxNW6RcD3mDaQ6tct_r-v3SkhtgdX3TRVraqjDjC-Mp9bKpWXBcwJ9uhRzjTuyKoZNzp_pzbEIjh9VcMIo85Nmb7Bsf_bx94HsOEyage4RU_YdndAsW5psQNFEIHj95pMg/media?maxWidthPx=1600&key=AIzaSyCR-Wh93a-p1QltTJfoD7baU_B1n4_H8w0 "HTTP/1.1 302 Found"
+2026-01-20 15:37:57,282 - INFO - HTTP Request: GET https://lh3.googleusercontent.com/places/ANXAkqHEQAU2Vnf8w9kjwIM9QfMj4qzeXZLz3mPuV1onTWIrppqebzaxyahqd32oBR1RYD-8mtCzxogtPJTFYgRWO1CBaJzK5vXXGZk=s4800-w1600 "HTTP/1.1 200 OK"
+2026-01-20 15:37:59,597 - INFO - Uploaded image to GCS: https://images.tooryst.co/attractions/1/card.webp
+2026-01-20 15:38:01,649 - INFO - Uploaded image to GCS: https://images.tooryst.co/attractions/1/hero.webp
+2026-01-20 15:38:01,662 - INFO - Processed card image for Amaze Amsterdam
+2026-01-20 15:38:01,662 - INFO -   ✓ Success: 0 images processed
+2026-01-20 15:38:02,663 - INFO - [2/966] Processing: Amsterdam Canal Cruise (Amsterdam)
+2026-01-20 15:38:02,663 - INFO - Fetching photo reference for Amsterdam Canal Cruise

@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Query, Depends, status
 from sqlalchemy.orm import Session
 from app.infrastructure.persistence.db import SessionLocal, get_db
 from pydantic import BaseModel
-from sqlalchemy import func, desc, or_
+from sqlalchemy import func, desc, or_, case
 
 from app.config import settings
 from app.infrastructure.persistence.db import SessionLocal
@@ -84,7 +84,10 @@ async def get_homepage():
             session.query(
                 models.Attraction,
                 models.City,
-                models.HeroImage.url.label("hero_image")
+                case(
+                    (models.HeroImage.gcs_url_card.isnot(None), models.HeroImage.gcs_url_card),
+                    else_=models.HeroImage.url
+                ).label("hero_image")
             )
             .join(models.City, models.Attraction.city_id == models.City.id)
             .outerjoin(
@@ -92,7 +95,11 @@ async def get_homepage():
                 (models.Attraction.id == models.HeroImage.attraction_id) &
                 (models.HeroImage.position == 1)
             )
-            .order_by(models.Attraction.name)
+            .order_by(
+                desc(models.HeroImage.last_refreshed_at.isnot(None)),
+                desc(models.HeroImage.last_refreshed_at),
+                models.Attraction.name
+            )
             .limit(settings.FEATURED_ATTRACTIONS_LIMIT)
             .all()
         )
@@ -250,7 +257,10 @@ async def get_city(city_slug: str):
         attractions = (
             session.query(
                 models.Attraction,
-                models.HeroImage.url.label("hero_image")
+                case(
+                    (models.HeroImage.gcs_url_card.isnot(None), models.HeroImage.gcs_url_card),
+                    else_=models.HeroImage.url
+                ).label("hero_image")
             )
             .filter(models.Attraction.city_id == city.id)
             .outerjoin(
@@ -258,7 +268,11 @@ async def get_city(city_slug: str):
                 (models.Attraction.id == models.HeroImage.attraction_id) &
                 (models.HeroImage.position == 1)
             )
-            .order_by(models.Attraction.name)
+            .order_by(
+                desc(models.HeroImage.last_refreshed_at.isnot(None)),
+                desc(models.HeroImage.last_refreshed_at),
+                models.Attraction.name
+            )
             .limit(settings.FEATURED_ATTRACTIONS_LIMIT)
             .all()
         )
@@ -337,14 +351,21 @@ async def get_city_attractions(
         attractions = (
             session.query(
                 models.Attraction,
-                models.HeroImage.url.label("hero_image")
+                case(
+                    (models.HeroImage.gcs_url_card.isnot(None), models.HeroImage.gcs_url_card),
+                    else_=models.HeroImage.url
+                ).label("hero_image")
             )
             .filter(models.Attraction.city_id == city.id)
             .outerjoin(
                 models.HeroImage,
                 (models.Attraction.id == models.HeroImage.attraction_id) & (models.HeroImage.position == 1)
             )
-            .order_by(models.Attraction.name)
+            .order_by(
+                desc(models.HeroImage.last_refreshed_at.isnot(None)),
+                desc(models.HeroImage.last_refreshed_at),
+                models.Attraction.name
+            )
             .offset(skip)
             .limit(limit)
             .all()
@@ -407,7 +428,10 @@ async def get_attractions(
             session.query(
                 models.Attraction,
                 models.City,
-                models.HeroImage.url.label("hero_image")
+                case(
+                    (models.HeroImage.gcs_url_card.isnot(None), models.HeroImage.gcs_url_card),
+                    else_=models.HeroImage.url
+                ).label("hero_image")
             )
             .join(models.City, models.Attraction.city_id == models.City.id)
             .outerjoin(
@@ -427,7 +451,11 @@ async def get_attractions(
         total = query.count()
 
         # Get attractions with limit
-        query = query.order_by(models.Attraction.name).limit(effective_limit)
+        query = query.order_by(
+            desc(models.HeroImage.last_refreshed_at.isnot(None)),
+            desc(models.HeroImage.last_refreshed_at),
+            models.Attraction.name
+        ).limit(effective_limit)
         attractions = query.all()
 
         items = []

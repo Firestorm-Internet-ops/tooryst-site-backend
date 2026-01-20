@@ -1,0 +1,22 @@
+2026-01-20 15:36:58,468 - INFO - ======================================================================
+2026-01-20 15:36:58,469 - INFO - Starting Hero Images GCS Migration
+2026-01-20 15:36:58,469 - INFO - ======================================================================
+2026-01-20 15:36:58,536 - INFO - Found 966 attractions with place_id
+2026-01-20 15:36:58,536 - INFO - Processing batch of 10 attractions
+2026-01-20 15:36:58,536 - INFO - [1/966] Processing: Amaze Amsterdam (Amsterdam)
+2026-01-20 15:36:58,536 - INFO - Fetching photo reference for Amaze Amsterdam
+2026-01-20 15:36:59,126 - INFO - HTTP Request: GET https://places.googleapis.com/v1/places/ChIJ2xlnX77jxUcR2WgrWg7Ehxk "HTTP/1.1 200 OK"
+2026-01-20 15:36:59,127 - INFO - Found 10 photo references for ChIJ2xlnX77jxUcR2WgrWg7Ehxk
+2026-01-20 15:36:59,512 - INFO - HTTP Request: GET https://places.googleapis.com/v1/places/ChIJ2xlnX77jxUcR2WgrWg7Ehxk/photos/AcnlKN2pCzNd1qkYtL0hklMslMEX-oW56rkiVCaVTKQ1hpXjq85-9J7c0nHZ7yYel4ox_uxBSFhG19ZpCOZKam4IYy27Wungz1LfJjXkNdnOPQVLW3_8psCmp0Y8hT0cwdw8vV5SY886y156hdGZTFs7rL6lxH-dhBc2YIFau7mEQyCtvbd8pKBTa-ineneg0gRu2wFUt5be75z02WOSAyUTA71L5fGF5968Ggss4Mjy3Xk26h_nNKsaevUMEPtoBbcsnwnb_RGh47GfT2DFAhLJelbwFHEyLlEXyPS_lHoaAAtUVA/media?maxWidthPx=1600&key=AIzaSyCR-Wh93a-p1QltTJfoD7baU_B1n4_H8w0 "HTTP/1.1 302 Found"
+2026-01-20 15:36:59,585 - INFO - HTTP Request: GET https://lh3.googleusercontent.com/places/ANXAkqHEQAU2Vnf8w9kjwIM9QfMj4qzeXZLz3mPuV1onTWIrppqebzaxyahqd32oBR1RYD-8mtCzxogtPJTFYgRWO1CBaJzK5vXXGZk=s4800-w1600 "HTTP/1.1 200 OK"
+2026-01-20 15:37:01,916 - INFO - Uploaded image to GCS: https://images.tooryst.co/attractions/1/card.webp
+2026-01-20 15:37:03,609 - INFO - Uploaded image to GCS: https://images.tooryst.co/attractions/1/hero.webp
+2026-01-20 15:37:03,634 - INFO - Processed card image for Amaze Amsterdam
+2026-01-20 15:37:03,634 - INFO -   ✓ Success: 0 images processed
+2026-01-20 15:37:04,635 - INFO - [2/966] Processing: Amsterdam Canal Cruise (Amsterdam)
+2026-01-20 15:37:04,635 - INFO - Fetching photo reference for Amsterdam Canal Cruise
+2026-01-20 15:37:04,843 - INFO - HTTP Request: GET https://places.googleapis.com/v1/places/ChIJIaP3F-0JxkcRsjmw80fNMrA "HTTP/1.1 200 OK"
+2026-01-20 15:37:04,846 - INFO - Found 10 photo references for ChIJIaP3F-0JxkcRsjmw80fNMrA
+2026-01-20 15:37:05,131 - INFO - HTTP Request: GET https://places.googleapis.com/v1/places/ChIJIaP3F-0JxkcRsjmw80fNMrA/photos/AcnlKN33o7MV0-bfuaMYI8DBizNkzsZdEYA054uGNj8N5a9P0AaQkC6JprACcpvcMVeuAi-28zLnsQOWBVqGkNggGRdxfQqv3rmymRrOmKcJcbS5DH3upw6YrPEIOe1wNBwc0DAxilEa6fqt8nKzF3MsAClmElhJoP2fqL7LZ6TccW82m4QFqK4ee-e5kqNf2lpGsRW7X7Kl6GUv1yYeo0vRlm2ILOxR_IMZyk27W62eSxFiaH2eTb88rmi7-ZrS83eq_Z_TU8_MSASuzKCDfSuiA4DO-oSW02WNYTORpGj7zdty8A/media?maxWidthPx=1600&key=AIzaSyCR-Wh93a-p1QltTJfoD7baU_B1n4_H8w0 "HTTP/1.1 302 Found"
+2026-01-20 15:37:05,417 - INFO - HTTP Request: GET https://lh3.googleusercontent.com/places/ANXAkqHbQsWcwT4QLRS4z4UJzcsAK59lIKb7NfGG6fX-Q9ks43WM_IWjdHAzHkibyg3cM_nK8XJdj9fgUTBGfFa1MIotQ8LYsrTaaiM=s4800-w1600 "HTTP/1.1 200 OK"
+2026-01-20 15:37:06,695 - INFO - Uploaded image to GCS: https://images.tooryst.co/attractions/2/card.webp

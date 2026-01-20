@@ -22,32 +22,25 @@ from app.infrastructure.persistence.repositories.sqlalchemy_city_repository impo
 )
 
 
-# Config flag for choosing repo implementation
-USE_DB_REPOS = os.getenv("USE_DB_REPOS", "false").lower() == "true"
-
-# If using DB repos, keep a shared session (dev simplicity). In production,
-# we would use per-request sessions via FastAPI dependency injection.
-_db_session_singleton = SessionLocal() if USE_DB_REPOS else None
+# If using DB repos, keep a shared session for repo initialization
+from app.config import settings
+_db_session = SessionLocal() if settings.USE_SQL_REPOSITORIES else None
 
 
-@lru_cache()
 def get_attraction_repository() -> AttractionRepository:
     """Get attraction repository instance.
     
-    - Default: in-memory (fast tests/dev)
-    - If USE_DB_REPOS=true: SQLAlchemy repositories with shared session
+    Default to SQL repositories. Uses in-memory only if explicitly disabled.
     """
-    if USE_DB_REPOS:
-        return SQLAlchemyAttractionRepository(_db_session_singleton)
+    if settings.USE_SQL_REPOSITORIES:
+        return SQLAlchemyAttractionRepository(_db_session)
     return InMemoryAttractionRepository()
 
 
-@lru_cache()
-@lru_cache()
 def get_city_repository() -> CityRepository:
     """Get city repository instance."""
-    if USE_DB_REPOS:
-        return SQLAlchemyCityRepository(_db_session_singleton)
+    if settings.USE_SQL_REPOSITORIES:
+        return SQLAlchemyCityRepository(_db_session)
     return InMemoryCityRepository()
 
 
@@ -61,8 +54,7 @@ def get_sqlalchemy_repositories():
     }
 
 
-# Use case instances
-@lru_cache()
+# Use case instances - Fresh instances each time to ensure consistency
 def get_attraction_page_use_case() -> GetAttractionPageUseCase:
     """Get attraction page use case."""
     return GetAttractionPageUseCase(
@@ -72,7 +64,6 @@ def get_attraction_page_use_case() -> GetAttractionPageUseCase:
     )
 
 
-@lru_cache()
 def get_attraction_sections_use_case() -> GetAttractionSectionsUseCase:
     """Get attraction sections use case."""
     return GetAttractionSectionsUseCase(

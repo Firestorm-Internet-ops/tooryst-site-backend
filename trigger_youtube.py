@@ -89,6 +89,15 @@ async def fetch_youtube_videos():
         
         # Process each attraction
         for idx, (attraction, city) in enumerate(attractions_to_process, 1):
+            if fetcher.is_quota_exceeded():
+                print(f"  🚫 YouTube quota exceeded! Stopping processing.")
+                stats['quota_exceeded'] = True
+                stats['quota_exceeded_at'] = {
+                    'attraction': attraction.name,
+                    'position': f"{idx}/{stats['total']}"
+                }
+                break
+
             current_videos = session.query(models.SocialVideo).filter_by(
                 attraction_id=attraction.id
             ).count()

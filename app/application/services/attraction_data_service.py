@@ -79,7 +79,7 @@ class AttractionDataService:
             self.logger.info(f"No weather data found for attraction {attraction.id}, fetching from API...")
             
             # Fetch weather data using the weather fetcher
-            timezone_str = attraction.city.timezone if attraction.city else "UTC"
+            timezone_str = attraction.timezone if hasattr(attraction, 'timezone') else "UTC"
             weather_data = await self.weather_fetcher.fetch(
                 attraction_id=attraction.id,
                 place_id=None,
@@ -87,8 +87,8 @@ class AttractionDataService:
                 longitude=attraction.longitude if attraction.longitude else 0.0,
                 timezone_str=timezone_str,
                 attraction_name=attraction.name,
-                city_name=attraction.city.name if attraction.city else None,
-                country=attraction.city.country if attraction.city else None
+                city_name=city_name,
+                country=country
             )
             
             if not weather_data:
@@ -149,7 +149,7 @@ class AttractionDataService:
             self.logger.error(f"Error fetching and storing weather data for attraction {attraction.id}: {e}")
 
     # -------- Page cards --------
-    def build_page_cards(self, attraction: models.Attraction) -> AttractionCardsDTO:
+    async def build_page_cards(self, attraction, city_name: Optional[str] = None, country: Optional[str] = None, timezone: Optional[str] = None) -> AttractionCardsDTO:
         """Hydrate AttractionCardsDTO from various tables."""
         try:
             session_ctx = self._session()
@@ -177,9 +177,9 @@ class AttractionDataService:
                 import pytz
                 
                 today_day_int = None
-                if attraction.city and attraction.city.timezone:
+                if timezone:
                     try:
-                        city_tz = pytz.timezone(attraction.city.timezone)
+                        city_tz = pytz.timezone(timezone)
                         today_dt = datetime.now(city_tz)
                         today_day_int = today_dt.weekday()  # 0=Monday, 6=Sunday
                     except Exception:
@@ -222,9 +222,9 @@ class AttractionDataService:
 
                 # Weather: get all available data from today onwards based on timezone
                 today_date = None
-                if attraction.city and attraction.city.timezone:
+                if timezone:
                     try:
-                        city_tz = pytz.timezone(attraction.city.timezone)
+                        city_tz = pytz.timezone(timezone)
                         today_date = datetime.now(city_tz).date()
                     except Exception:
                         today_date = datetime.now().date()
@@ -248,8 +248,7 @@ class AttractionDataService:
                     
                     # Try to fetch and store weather data
                     try:
-                        # We need to run async code in sync context, so we'll use asyncio.run
-                        asyncio.run(self._fetch_and_store_weather_data(attraction, session))
+                        await self._fetch_and_store_weather_data(attraction, session)
                         
                         # After fetching, try to get weather data again
                         weather_rows = (
@@ -468,7 +467,7 @@ class AttractionDataService:
         return nearby_items
 
     # -------- Sections --------
-    async def build_sections(self, attraction: models.Attraction, city_name: str, country: Optional[str]) -> List[SectionDTO]:
+    async def build_sections(self, attraction, city_name: str, country: Optional[str], timezone: Optional[str] = None) -> List[SectionDTO]:
         try:
             session_ctx = self._session()
         except Exception:
@@ -483,9 +482,9 @@ class AttractionDataService:
             import pytz
             
             today_day_int = None
-            if attraction.city and attraction.city.timezone:
+            if timezone:
                 try:
-                    city_tz = pytz.timezone(attraction.city.timezone)
+                    city_tz = pytz.timezone(timezone)
                     today_dt = datetime.now(city_tz)
                     today_day_int = today_dt.weekday()  # 0=Monday, 6=Sunday
                 except Exception:
@@ -924,9 +923,17 @@ class AttractionDataService:
         except Exception:
             return []
 
-    def build_page_dto(self, attraction: models.Attraction, city_name: str, country: Optional[str]) -> AttractionPageDTO:
+    async def build_page_dto(self, attraction, city_name: str, country: Optional[str]) -> AttractionPageDTO:
         """Assemble full page DTO."""
-        cards = self.build_page_cards(attraction)
+        
+        # Determine timezone
+        timezone = None
+        if hasattr(attraction, 'city') and attraction.city:
+            timezone = attraction.city.timezone
+        elif hasattr(attraction, 'timezone'): # Future proof for entity enrichment
+            timezone = attraction.timezone
+            
+        cards = await self.build_page_cards(attraction, city_name=city_name, country=country, timezone=timezone)
 
         # Get nearby attractions with enriched data
         session = self._session()
@@ -1118,7 +1125,7 @@ class AttractionDataService:
             name=attraction.name,
             city=city_name,
             country=country,
-            timezone=attraction.city.timezone if attraction.city else None,
+            timezone=timezone,
             cards=cards,
             best_time=best_time_data,
             nearby_attractions=nearby_attractions if nearby_attractions else None,
@@ -1127,9 +1134,14 @@ class AttractionDataService:
             audience_profiles=audience_profiles_data,
         )
 
-    async def build_sections_dto(self, attraction: models.Attraction, city_name: str, country: Optional[str]) -> AttractionSectionsDTO:
+    async def build_sections_dto(self, attraction, city_name: str, country: Optional[str]) -> AttractionSectionsDTO:
         """Assemble sections DTO."""
-        sections = await self.build_sections(attraction, city_name, country)
+        # Determine timezone
+        timezone = None
+        if hasattr(attraction, 'city') and attraction.city:
+            timezone = attraction.city.timezone
+            
+        sections = await self.build_sections(attraction, city_name, country, timezone=timezone)
         return AttractionSectionsDTO(
             attraction_id=attraction.id,
             slug=attraction.slug,

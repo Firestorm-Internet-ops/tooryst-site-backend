@@ -94,6 +94,16 @@ async def fetch_missing_youtube_videos_async() -> Dict[str, Any]:
 
     # Process each attraction
     for idx, attr_data in enumerate(all_attractions, 1):
+        # Check quota before processing
+        if fetcher.is_quota_exceeded():
+            logger.warning(f"  🚫 YouTube quota exceeded! Stopping.")
+            stats['quota_exceeded'] = True
+            stats['quota_exceeded_at'] = {
+                'attraction': attr_data['attraction_name'],
+                'position': f"{idx}/{stats['total']}"
+            }
+            break
+
         logger.info(f"[{idx}/{stats['total']}] Processing: {attr_data['attraction_name']}")
 
         try:
