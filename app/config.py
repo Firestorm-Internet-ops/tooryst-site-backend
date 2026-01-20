@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     # ===== Rate Limiting & Quotas =====
     MAX_ATTRACTIONS_PER_CITY: int = int(os.getenv("MAX_ATTRACTIONS_PER_CITY", "100"))
     MIN_VIDEO_COUNT_THRESHOLD: int = int(os.getenv("MIN_VIDEO_COUNT_THRESHOLD", "5"))
-    NEARBY_ATTRACTIONS_MULTIPLIER: int = int(os.getenv("NEARBY_ATTRACTIONS_MULTIPLIER", "2"))
+    NEARBY_ATTRACTIONS_COUNT: int = int(os.getenv("NEARBY_ATTRACTIONS_COUNT", "10"))
 
     # ===== Pagination Defaults =====
     DEFAULT_PAGE_SIZE: int = int(os.getenv("DEFAULT_PAGE_SIZE", "20"))

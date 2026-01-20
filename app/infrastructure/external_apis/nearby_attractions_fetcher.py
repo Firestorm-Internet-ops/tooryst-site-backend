@@ -1,5 +1,4 @@
 """Nearby Attractions Fetcher using database and Google Places API."""
-import os
 import logging
 from typing import Optional, Dict, Any, List
 
@@ -18,9 +17,7 @@ class NearbyAttractionsFetcherImpl:
     
     def __init__(self, places_client: Optional[GooglePlacesClient] = None):
         self.places_client = places_client or GooglePlacesClient()
-        base_count = int(os.getenv("NEARBY_ATTRACTIONS_COUNT", "10"))
-        multiplier = settings.NEARBY_ATTRACTIONS_MULTIPLIER
-        self.target_count = base_count * multiplier
+        self.target_count = settings.NEARBY_ATTRACTIONS_COUNT
     
     async def fetch(
         self,
@@ -296,14 +293,16 @@ class NearbyAttractionsFetcherImpl:
                 photo_reference = None
                 if place.get("photos") and len(place["photos"]) > 0:
                     photo_reference = place["photos"][0].get("photo_reference")
-                
+
                 image_url = None
                 if photo_reference:
                     image_url = self.places_client.get_photo_url(
                         photo_reference=photo_reference,
                         max_width=400
                     )
-                
+                else:
+                    logger.debug(f"No photo_reference for Google place: {place.get('name')}")
+
                 # Calculate distance
                 distance_km = place.get("distance_km")
                 if distance_km is not None:
@@ -323,8 +322,8 @@ class NearbyAttractionsFetcherImpl:
                         distance_text = f"{int(distance_km * 1000)}m"
                     else:
                         distance_text = f"{distance_km:.1f}km"
-                    
-                    walking_time_minutes = int((distance_km / 5.0) * 60)
+
+                    walking_time_minutes = int((distance_km / settings.WALKING_SPEED_KMH) * 60)
                 else:
                     # Fallback if distance calculation failed
                     distance_text = "Nearby"
@@ -352,7 +351,8 @@ class NearbyAttractionsFetcherImpl:
                     "audience_type": None,
                     "audience_text": None
                 })
-            
+
+            logger.info(f"Fetched {len(nearby_list)} nearby attractions from Google Places")
             return nearby_list
             
         except Exception as e:

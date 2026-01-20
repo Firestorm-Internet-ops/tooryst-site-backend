@@ -44,7 +44,7 @@ class GetAttractionSectionsUseCase:
         country = city.country if city else None
         
         # Build DTO (for now, minimal - will be expanded with section data)
-        return self._data_service.build_sections_dto(
+        return await self._data_service.build_sections_dto(
             attraction=attraction,
             city_name=city_name,
             country=country,

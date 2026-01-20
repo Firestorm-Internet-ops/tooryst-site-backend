@@ -272,12 +272,68 @@ class GooglePlacesClient:
         
         # Sort by distance
         places.sort(key=lambda p: p.get("distance_km", float('inf')))
-        
+
         return places[:max_results]
-    
-    def get_photo_url(self, photo_reference: str, max_width: int = 400) -> str:
-        """Get photo URL from photo reference (synchronous version)."""
+
+    async def get_place_photo_url(
+        self,
+        place_id: str,
+        max_width: int = 800
+    ) -> Optional[str]:
+        """
+        Get the first photo URL for a place by place_id.
+
+        Uses Places API v1 (New) to get fresh photo reference.
+        Falls back to None if API call fails.
+
+        Args:
+            place_id: Google Place ID
+            max_width: Maximum width for photo
+
+        Returns:
+            Photo URL or None if no photos available
+        """
         if not self.api_key:
+            logger.warning("Cannot fetch place photo: API key missing")
             return None
-        
-        return f"{self.BASE_URL}/place/photo?maxwidth={max_width}&photo_reference={photo_reference}&key={self.api_key}"
+
+        try:
+            # Get place details with photos field
+            url = f"https://places.googleapis.com/v1/places/{place_id}"
+            headers = {
+                "X-Goog-Api-Key": self.api_key,
+                "X-Goog-FieldMask": "photos"
+            }
+
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(url, headers=headers)
+
+                if response.status_code != 200:
+                    logger.warning(f"Place details fetch failed for {place_id}: {response.status_code}")
+                    return None
+
+                data = response.json()
+                photos = data.get("photos", [])
+
+                if not photos or len(photos) == 0:
+                    logger.debug(f"No photos available for place_id: {place_id}")
+                    return None
+
+                # Get first photo name (e.g., "places/{place_id}/photos/{photo_id}")
+                photo_name = photos[0].get("name")
+                if not photo_name:
+                    return None
+
+                # Construct photo URL using Places API v1 format
+                photo_url = f"https://places.googleapis.com/v1/{photo_name}/media"
+                photo_url += f"?maxWidthPx={max_width}&key={self.api_key}"
+
+                logger.debug(f"Generated photo URL for {place_id}: {photo_url[:100]}...")
+                return photo_url
+
+        except httpx.TimeoutException:
+            logger.error(f"Timeout fetching photo for place_id {place_id}")
+            return None
+        except Exception as e:
+            logger.error(f"Error fetching photo for place_id {place_id}: {e}")
+            return None

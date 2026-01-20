@@ -42,6 +42,9 @@ from app.application.dto.section_dto import (
     AudienceProfileSectionContentDTO,
     AudienceProfileItemDTO,
 )
+from app.infrastructure.external_apis.nearby_attractions_fetcher import NearbyAttractionsFetcherImpl
+from app.infrastructure.persistence.storage_functions import store_nearby_attractions
+from app.config import settings
 
 
 class AttractionDataService:
@@ -414,8 +417,58 @@ class AttractionDataService:
             # If anything fails (e.g., tables not present), return empty cards
             return AttractionCardsDTO()
 
+    # -------- Enrichment --------
+    async def _enrich_google_places_images(
+        self,
+        nearby_items: List[NearbyAttractionItemDTO]
+    ) -> List[NearbyAttractionItemDTO]:
+        """
+        Enrich Google Places attractions with fresh images from Google Places API.
+
+        Identifies attractions by external link URL and fetches fresh photo URLs.
+
+        Args:
+            nearby_items: List of nearby attraction DTOs
+
+        Returns:
+            Enriched list with updated image_urls for Google Places attractions
+        """
+        from app.utils.google_places_utils import extract_place_id_from_link
+        from app.infrastructure.external_apis.google_places_client import GooglePlacesClient
+
+        places_client = GooglePlacesClient()
+
+        for item in nearby_items:
+            link = item.link
+
+            # Check if it's a Google Places attraction (external link)
+            is_google_place = link and isinstance(link, str) and "google.com/maps" in link
+
+            if is_google_place:
+                # Extract place_id from link
+                place_id = extract_place_id_from_link(link)
+
+                if place_id:
+                    try:
+                        # Fetch fresh photo URL
+                        fresh_image_url = await places_client.get_place_photo_url(
+                            place_id=place_id,
+                            max_width=800
+                        )
+
+                        if fresh_image_url:
+                            logger.info(f"Enriched image for {item.name}: {place_id}")
+                            item.image_url = fresh_image_url
+                        else:
+                            logger.debug(f"No fresh image available for {item.name}")
+                    except Exception as e:
+                        logger.error(f"Failed to enrich image for {item.name}: {e}")
+                        # Keep existing image_url on error
+
+        return nearby_items
+
     # -------- Sections --------
-    def build_sections(self, attraction: models.Attraction, city_name: str, country: Optional[str]) -> List[SectionDTO]:
+    async def build_sections(self, attraction: models.Attraction, city_name: str, country: Optional[str]) -> List[SectionDTO]:
         try:
             session_ctx = self._session()
         except Exception:
@@ -670,24 +723,88 @@ class AttractionDataService:
                         )
                     )
 
-            # Nearby attractions section
+            # Nearby attractions section - HYBRID APPROACH
+            # 1. Query DB first (fast path)
+            # 2. If fewer than target count, call fetcher to get more from Google Places
+            # 3. Persist results to DB for future requests (cache-on-read)
+            target_count = settings.NEARBY_ATTRACTIONS_COUNT  # 10
+            logger = logging.getLogger(__name__)
+
             nearby_rows = (
                 session.query(models.NearbyAttraction)
                 .filter(models.NearbyAttraction.attraction_id == attraction.id)
                 .order_by(models.NearbyAttraction.id.asc())
+                .limit(target_count)
                 .all()
             )
-            if nearby_rows:
-                nearby_items = []
+
+            db_count = len(nearby_rows)
+            logger.info(f"Found {db_count} nearby attractions in DB for {attraction.name}")
+
+            nearby_items = []
+
+            # If insufficient results AND we have coordinates, call fetcher
+            if db_count < target_count and attraction.latitude and attraction.longitude:
+                logger.info(f"DB has {db_count}/{target_count}, calling fetcher for more...")
+
+                try:
+                    fetcher = NearbyAttractionsFetcherImpl()
+                    fetcher_result = await fetcher.fetch(
+                        attraction_id=attraction.id,
+                        attraction_name=attraction.name,
+                        city_name=city_name,
+                        latitude=float(attraction.latitude),
+                        longitude=float(attraction.longitude),
+                        place_id=attraction.place_id,
+                        force_google=False
+                    )
+
+                    if fetcher_result:
+                        section_items = fetcher_result.get('section', {}).get('items', [])
+                        nearby_list = fetcher_result.get('nearby', [])
+
+                        # Convert fetcher items to DTOs
+                        for item in section_items[:target_count]:
+                            nearby_items.append(
+                                NearbyAttractionItemDTO(
+                                    id=item.get('id') or 0,
+                                    slug=item.get('slug'),
+                                    name=item.get('name'),
+                                    distance_text=item.get('distance_text'),
+                                    distance_km=item.get('distance_km'),
+                                    rating=item.get('rating'),
+                                    user_ratings_total=item.get('user_ratings_total'),
+                                    review_count=item.get('review_count'),
+                                    image_url=item.get('image_url'),
+                                    link=item.get('link'),
+                                    vicinity=item.get('vicinity'),
+                                    audience_type=item.get('audience_type'),
+                                    audience_text=item.get('audience_text'),
+                                )
+                            )
+
+                        # Persist to database for future requests (cache-on-read)
+                        if nearby_list and len(nearby_list) > db_count:
+                            try:
+                                store_nearby_attractions(attraction.id, nearby_list)
+                                logger.info(f"Persisted {len(nearby_list)} nearby attractions to DB")
+                            except Exception as e:
+                                logger.error(f"Failed to persist nearby attractions: {e}")
+
+                except Exception as e:
+                    logger.error(f"Fetcher failed, falling back to DB results: {e}")
+
+            # If fetcher wasn't called or failed, use existing DB results
+            if not nearby_items and nearby_rows:
                 for n in nearby_rows:
                     # Start with nearby attraction data
                     image_url = n.image_url
                     rating = float(n.rating) if n.rating is not None else None
                     review_count = n.review_count
-                    
+
                     # Try to fetch missing data from attractions table
                     nearby_attr = None
-                    
+
                     # First try by nearby_attraction_id
                     if n.nearby_attraction_id:
                         nearby_attr = (
@@ -695,7 +812,7 @@ class AttractionDataService:
                             .filter(models.Attraction.id == n.nearby_attraction_id)
                             .first()
                         )
-                    
+
                     # Fallback: try by slug if nearby_attraction_id is null
                     if not nearby_attr and n.slug:
                         nearby_attr = (
@@ -704,9 +821,8 @@ class AttractionDataService:
                             .first()
                         )
                         if nearby_attr:
-                            logger = __import__('logging').getLogger(__name__)
                             logger.info(f"Found nearby attraction by slug: {n.slug} (id: {nearby_attr.id})")
-                    
+
                     if nearby_attr:
                         # Fill in missing image from hero_images table
                         if image_url is None:
@@ -718,20 +834,18 @@ class AttractionDataService:
                             )
                             if hero_image:
                                 image_url = hero_image.url
-                                logger = __import__('logging').getLogger(__name__)
                                 logger.info(f"Fetched hero image for {n.name}: {image_url}")
                             else:
-                                logger = __import__('logging').getLogger(__name__)
                                 logger.warning(f"No hero image found for {n.name} (attraction_id: {nearby_attr.id})")
-                        
+
                         # Fill in missing rating
                         if rating is None and nearby_attr.rating is not None:
                             rating = float(nearby_attr.rating)
-                        
+
                         # Fill in missing review count
                         if review_count is None and nearby_attr.review_count is not None:
                             review_count = nearby_attr.review_count
-                    
+
                     nearby_items.append(
                         NearbyAttractionItemDTO(
                             id=n.id,
@@ -749,6 +863,11 @@ class AttractionDataService:
                             audience_text=n.audience_text,
                         )
                     )
+
+            # Enrich and add section
+            if nearby_items:
+                nearby_items = await self._enrich_google_places_images(nearby_items)
+
                 sections.append(
                     SectionDTO(
                         section_type="nearby_attractions",
@@ -1008,9 +1127,9 @@ class AttractionDataService:
             audience_profiles=audience_profiles_data,
         )
 
-    def build_sections_dto(self, attraction: models.Attraction, city_name: str, country: Optional[str]) -> AttractionSectionsDTO:
+    async def build_sections_dto(self, attraction: models.Attraction, city_name: str, country: Optional[str]) -> AttractionSectionsDTO:
         """Assemble sections DTO."""
-        sections = self.build_sections(attraction, city_name, country)
+        sections = await self.build_sections(attraction, city_name, country)
         return AttractionSectionsDTO(
             attraction_id=attraction.id,
             slug=attraction.slug,
