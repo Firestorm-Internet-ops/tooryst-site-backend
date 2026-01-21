@@ -159,15 +159,28 @@ class AttractionDataService:
 
         try:
             with session_ctx as session:
-                # Hero images
+                # Hero images (positions 0-9 only, proxy rejects higher)
                 hero_rows = (
                     session.query(models.HeroImage)
-                    .filter(models.HeroImage.attraction_id == attraction.id)
+                    .filter(
+                        models.HeroImage.attraction_id == attraction.id,
+                        models.HeroImage.position <= 9
+                    )
                     .order_by(models.HeroImage.position.asc(), models.HeroImage.id.asc())
                     .all()
                 )
+                # Use proxy URL for on-demand fetching and GCS caching
+                # Proxy endpoint: GET /api/v1/image/{attraction_id}/{position}
+                # - Checks if image exists in GCS → redirect to CDN
+                # - If not → fetches from Google Places → uploads to GCS → redirect
                 hero_images = (
-                    {"images": [HeroImageDTO(url=h.url, alt=None, position=h.position) for h in hero_rows]}
+                    {"images": [
+                        HeroImageDTO(
+                            url=f"{settings.API_BASE_URL}/api/v1/image/{attraction.id}/{h.position}",
+                            alt=h.alt_text,
+                            position=h.position
+                        ) for h in hero_rows
+                    ]}
                     if hero_rows
                     else None
                 )
@@ -832,7 +845,8 @@ class AttractionDataService:
                                 .first()
                             )
                             if hero_image:
-                                image_url = hero_image.url
+                                # Use GCS URL if available, fall back to original URL
+                                image_url = hero_image.gcs_url_hero or hero_image.gcs_url_card
                                 logger.info(f"Fetched hero image for {n.name}: {image_url}")
                             else:
                                 logger.warning(f"No hero image found for {n.name} (attraction_id: {nearby_attr.id})")
@@ -1088,7 +1102,8 @@ class AttractionDataService:
                                 .first()
                             )
                             if hero_image:
-                                image_url = hero_image.url
+                                # Use GCS URL if available, fall back to original URL
+                                image_url = hero_image.gcs_url_hero or hero_image.gcs_url_card
                                 logger.info(f"Fetched hero image for {n.name}: {image_url}")
                             else:
                                 logger.warning(f"No hero image found for {n.name} (attraction_id: {nearby_attr.id})")

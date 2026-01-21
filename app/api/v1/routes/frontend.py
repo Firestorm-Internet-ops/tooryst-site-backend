@@ -84,10 +84,7 @@ async def get_homepage():
             session.query(
                 models.Attraction,
                 models.City,
-                case(
-                    (models.HeroImage.gcs_url_card.isnot(None), models.HeroImage.gcs_url_card),
-                    else_=models.HeroImage.url
-                ).label("hero_image")
+models.HeroImage.gcs_url_card.label("hero_image")
             )
             .join(models.City, models.Attraction.city_id == models.City.id)
             .outerjoin(
@@ -257,10 +254,7 @@ async def get_city(city_slug: str):
         attractions = (
             session.query(
                 models.Attraction,
-                case(
-                    (models.HeroImage.gcs_url_card.isnot(None), models.HeroImage.gcs_url_card),
-                    else_=models.HeroImage.url
-                ).label("hero_image")
+models.HeroImage.gcs_url_card.label("hero_image")
             )
             .filter(models.Attraction.city_id == city.id)
             .outerjoin(
@@ -351,10 +345,7 @@ async def get_city_attractions(
         attractions = (
             session.query(
                 models.Attraction,
-                case(
-                    (models.HeroImage.gcs_url_card.isnot(None), models.HeroImage.gcs_url_card),
-                    else_=models.HeroImage.url
-                ).label("hero_image")
+models.HeroImage.gcs_url_card.label("hero_image")
             )
             .filter(models.Attraction.city_id == city.id)
             .outerjoin(
@@ -428,10 +419,7 @@ async def get_attractions(
             session.query(
                 models.Attraction,
                 models.City,
-                case(
-                    (models.HeroImage.gcs_url_card.isnot(None), models.HeroImage.gcs_url_card),
-                    else_=models.HeroImage.url
-                ).label("hero_image")
+models.HeroImage.gcs_url_card.label("hero_image")
             )
             .join(models.City, models.Attraction.city_id == models.City.id)
             .outerjoin(
@@ -513,10 +501,11 @@ async def get_attraction(
         attr, city = attraction
 
         # Get all data sections with LIMITS to prevent memory exhaustion
-        # Hero images: limit to 20 (should be small anyway)
-        hero_images = session.query(models.HeroImage).filter_by(
-            attraction_id=attr.id
-        ).order_by(models.HeroImage.position).limit(20).all()
+        # Hero images: limit to 10 (positions 0-9 only, proxy rejects higher)
+        hero_images = session.query(models.HeroImage).filter(
+            models.HeroImage.attraction_id == attr.id,
+            models.HeroImage.position <= 9
+        ).order_by(models.HeroImage.position).limit(10).all()
 
         # Get best time data - separate regular and special days
         # Regular days: Get one row per day_int (0-6), using the most recent if duplicates exist
@@ -642,7 +631,7 @@ async def get_attraction(
             
             "hero_images": [
                 {
-                    "url": img.url,
+                    "url": f"{settings.API_BASE_URL}/api/v1/image/{attr.id}/{img.position}",
                     "alt_text": img.alt_text
                 }
                 for img in hero_images
@@ -986,7 +975,7 @@ async def search(q: str = Query(..., description="Search query")):
                 models.City.name.label('city_name'),
                 models.City.country.label('country_name'),
                 models.City.slug.label('city_slug'),
-                models.HeroImage.url.label("hero_image")
+                models.HeroImage.gcs_url_card.label("hero_image")
             )
             .join(models.City, models.Attraction.city_id == models.City.id)
             .outerjoin(
