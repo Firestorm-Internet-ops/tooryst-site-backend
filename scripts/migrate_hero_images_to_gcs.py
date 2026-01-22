@@ -21,6 +21,7 @@ import asyncio
 import argparse
 import logging
 import sys
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -31,13 +32,17 @@ from app.infrastructure.persistence.db import SessionLocal
 from app.infrastructure.persistence import models
 from app.tasks.hero_images_refresh_tasks import process_card_image
 
+# Ensure logs directory exists
+log_dir = Path(__file__).parent.parent / 'logs'
+os.makedirs(log_dir, exist_ok=True)
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(f'migration_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+        logging.FileHandler(log_dir / f'migration_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
     ]
 )
 logger = logging.getLogger(__name__)
@@ -84,7 +89,7 @@ async def migrate_single_attraction(attraction: dict, dry_run: bool = False) -> 
     """Migrate a single attraction's hero images to GCS."""
     if dry_run:
         logger.info(f"[DRY RUN] Would process: {attraction['name']}")
-        return {"status": "dry_run", "attraction": attraction['name']}
+        return {"status": "dry_run", "attraction": attraction['name'], "id": attraction['id']}
 
     try:
         result = await process_card_image(
@@ -95,6 +100,7 @@ async def migrate_single_attraction(attraction: dict, dry_run: bool = False) -> 
         return {
             "attraction": attraction['name'],
             "slug": attraction['slug'],
+            "id": attraction['id'],
             **result
         }
     except Exception as e:
@@ -103,7 +109,8 @@ async def migrate_single_attraction(attraction: dict, dry_run: bool = False) -> 
             "attraction": attraction['name'],
             "slug": attraction['slug'],
             "status": "error",
-            "error": str(e)
+            "error": str(e),
+            "id": attraction['id']
         }
 
 
@@ -170,6 +177,12 @@ async def run_migration(batch_size: int = None, start_from: int = 0, dry_run: bo
         for r in results:
             if r.get('status') == 'error':
                 logger.info(f"  - {r['attraction']}: {r.get('error', 'Unknown')}")
+    
+    # Log successful additions (or dry run processed)
+    logger.info("\nAdded images for processing:")
+    for r in results:
+        if r.get('status') == 'success' or (dry_run and r.get('status') == 'dry_run'):
+             logger.info(f"Added images for attraction: ID={r['id']}, Name={r['attraction']}")
 
     return {
         "total": len(attractions),
