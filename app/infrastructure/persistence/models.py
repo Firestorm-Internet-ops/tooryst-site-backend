@@ -184,6 +184,7 @@ class NearbyAttraction(Base):
     user_ratings_total = Column(Integer)
     review_count = Column(Integer)
     image_url = Column(String(1024))
+    gcs_url = Column(String(512))
     link = Column(String(1024))
     vicinity = Column(String(255))
     distance_text = Column(String(64))

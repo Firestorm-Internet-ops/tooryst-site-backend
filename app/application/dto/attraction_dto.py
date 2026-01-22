@@ -11,6 +11,8 @@ class HeroImageDTO:
     url: str
     alt: Optional[str] = None
     position: Optional[int] = None
+    gcs_url_hero: Optional[str] = None
+    gcs_url_card: Optional[str] = None
 
 
 @dataclass

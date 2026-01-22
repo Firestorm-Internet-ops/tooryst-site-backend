@@ -178,7 +178,9 @@ class AttractionDataService:
                         HeroImageDTO(
                             url=f"{settings.API_BASE_URL}/api/v1/image/{attraction.id}/{h.position}",
                             alt=h.alt_text,
-                            position=h.position
+                            position=h.position,
+                            gcs_url_hero=h.gcs_url_hero,
+                            gcs_url_card=h.gcs_url_card
                         ) for h in hero_rows
                     ]}
                     if hero_rows
@@ -432,31 +434,41 @@ class AttractionDataService:
     # -------- Enrichment --------
     async def _enrich_google_places_images(
         self,
-        nearby_items: List[NearbyAttractionItemDTO]
+        nearby_items: List[NearbyAttractionItemDTO],
+        attraction_id: int
     ) -> List[NearbyAttractionItemDTO]:
         """
         Enrich Google Places attractions with fresh images from Google Places API.
 
         Identifies attractions by external link URL and fetches fresh photo URLs.
+        Caches images to GCS to avoid repeated API calls.
 
         Args:
             nearby_items: List of nearby attraction DTOs
+            attraction_id: ID of the parent attraction (for GCS path)
 
         Returns:
             Enriched list with updated image_urls for Google Places attractions
         """
         from app.utils.google_places_utils import extract_place_id_from_link
         from app.infrastructure.external_apis.google_places_client import GooglePlacesClient
+        from app.infrastructure.external_apis.gcs_client import gcs_client, image_processor
+        import httpx
 
         places_client = GooglePlacesClient()
 
         for item in nearby_items:
+            # Skip if already has GCS URL
+            if item.gcs_url:
+                item.image_url = item.gcs_url
+                continue
+
             link = item.link
 
             # Check if it's a Google Places attraction (external link)
             is_google_place = link and isinstance(link, str) and "google.com/maps" in link
 
-            if is_google_place:
+            if is_google_place and not item.image_url:
                 # Extract place_id from link
                 place_id = extract_place_id_from_link(link)
 
@@ -469,15 +481,61 @@ class AttractionDataService:
                         )
 
                         if fresh_image_url:
-                            logger.info(f"Enriched image for {item.name}: {place_id}")
-                            item.image_url = fresh_image_url
+                            # Download and cache to GCS
+                            try:
+                                async with httpx.AsyncClient() as client:
+                                    resp = await client.get(fresh_image_url, timeout=30)
+                                    if resp.status_code == 200:
+                                        # Convert to WebP
+                                        webp_bytes, _, _ = image_processor.process_image(
+                                            resp.content, 800
+                                        )
+
+                                        # Upload to GCS
+                                        nearby_key = item.id if item.id else hash(item.name)
+                                        
+                                        gcs_url = gcs_client.upload_nearby_attraction_image(
+                                            attraction_id=attraction_id,
+                                            nearby_attraction_id=nearby_key,
+                                            image_bytes=webp_bytes
+                                        )
+
+                                        if gcs_url:
+                                            item.gcs_url = gcs_url
+                                            item.image_url = gcs_url
+
+                                            # Update DB with GCS URL
+                                            if item.id:
+                                                self._update_nearby_gcs_url(item.id, gcs_url)
+                                            
+                                            self.logger.info(f"Cached nearby image for {item.name}: {gcs_url}")
+                                        else:
+                                            item.image_url = fresh_image_url
+                                    else:
+                                        item.image_url = fresh_image_url
+                            except Exception as e:
+                                self.logger.warning(f"Failed to cache nearby image: {e}")
+                                item.image_url = fresh_image_url
                         else:
-                            logger.debug(f"No fresh image available for {item.name}")
+                            self.logger.debug(f"No fresh image available for {item.name}")
                     except Exception as e:
-                        logger.error(f"Failed to enrich image for {item.name}: {e}")
+                        self.logger.error(f"Failed to enrich image for {item.name}: {e}")
                         # Keep existing image_url on error
 
         return nearby_items
+
+    def _update_nearby_gcs_url(self, nearby_id: int, gcs_url: str):
+        """Update nearby attraction with GCS URL."""
+        if not nearby_id:
+            return
+        try:
+            with self.session_factory() as session:
+                session.query(models.NearbyAttraction).filter(
+                    models.NearbyAttraction.id == nearby_id
+                ).update({"gcs_url": gcs_url})
+                session.commit()
+        except Exception as e:
+            self.logger.error(f"Failed to update nearby GCS URL: {e}")
 
     # -------- Sections --------
     async def build_sections(self, attraction, city_name: str, country: Optional[str], timezone: Optional[str] = None) -> List[SectionDTO]:
@@ -810,7 +868,7 @@ class AttractionDataService:
             if not nearby_items and nearby_rows:
                 for n in nearby_rows:
                     # Start with nearby attraction data
-                    image_url = n.image_url
+                    image_url = n.gcs_url or n.image_url
                     rating = float(n.rating) if n.rating is not None else None
                     review_count = n.review_count
 
@@ -879,7 +937,7 @@ class AttractionDataService:
 
             # Enrich and add section
             if nearby_items:
-                nearby_items = await self._enrich_google_places_images(nearby_items)
+                nearby_items = await self._enrich_google_places_images(nearby_items, attraction.id)
 
                 sections.append(
                     SectionDTO(

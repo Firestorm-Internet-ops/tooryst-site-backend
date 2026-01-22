@@ -152,6 +152,27 @@ class GCSImageClient:
         blob_path = f"attractions/{attraction_id}/hero_{position}.webp"
         return self.upload_image(image_bytes, blob_path, content_type)
 
+    def upload_nearby_attraction_image(
+        self,
+        attraction_id: int,
+        nearby_attraction_id: int,
+        image_bytes: bytes,
+        content_type: str = "image/webp"
+    ) -> Optional[str]:
+        """Upload nearby attraction image to GCS and return CDN URL.
+
+        Args:
+            attraction_id: The attraction ID
+            nearby_attraction_id: The nearby attraction ID
+            image_bytes: Raw image bytes
+            content_type: MIME type
+
+        Returns:
+            CDN URL or None if upload failed
+        """
+        blob_path = f"attractions/{attraction_id}/nearby/{nearby_attraction_id}.webp"
+        return self.upload_image(image_bytes, blob_path, content_type)
+
     def get_hero_image_blob_path(self, attraction_id: int, position: int) -> str:
         """Get the blob path for a hero image.
 

@@ -47,11 +47,20 @@ def get_all_attractions():
     """Get all attractions with place_id."""
     session = SessionLocal()
     try:
+        # Subquery to find attractions with GCS images
+        processed_subquery = (
+            session.query(models.HeroImage.attraction_id)
+            .filter(models.HeroImage.position == 1)
+            .filter(models.HeroImage.gcs_url_hero.isnot(None))
+            .filter(models.HeroImage.gcs_url_hero != "")
+        )
+
         attractions = (
             session.query(models.Attraction, models.City)
             .join(models.City, models.Attraction.city_id == models.City.id)
             .filter(models.Attraction.place_id.isnot(None))
             .filter(models.Attraction.place_id != "")
+            .filter(models.Attraction.id.notin_(processed_subquery))
             .order_by(models.Attraction.id)
             .all()
         )

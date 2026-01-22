@@ -9,6 +9,8 @@ class HeroImageSchema(BaseModel):
     url: str
     alt: Optional[str] = None
     position: Optional[int] = None
+    gcs_url_hero: Optional[str] = None
+    gcs_url_card: Optional[str] = None
 
 
 class BestTimeTodaySchema(BaseModel):
@@ -112,6 +114,7 @@ class NearbyAttractionItemSchema(BaseModel):
     distance_text: Optional[str] = None
     walking_time_minutes: Optional[int] = None
     image_url: Optional[str] = None
+    gcs_url: Optional[str] = None
     rating: Optional[float] = None
     review_count: Optional[int] = None
     vicinity: Optional[str] = None

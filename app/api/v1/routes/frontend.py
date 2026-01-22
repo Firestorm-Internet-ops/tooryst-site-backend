@@ -547,6 +547,46 @@ async def get_attraction(
             models.WeatherForecast.date_local >= today_date
         ).order_by(models.WeatherForecast.date_local).all()
 
+        # NEW: Immediately fetch weather if missing/stale
+        if not weather and attr.latitude and attr.longitude:
+            try:
+                logger.info(f"Weather missing for {attr.name}, fetching immediately...")
+                from app.infrastructure.external_apis.weather_fetcher import WeatherFetcherImpl
+                from app.tasks.refresh_tasks import store_weather_data
+                
+                fetcher = WeatherFetcherImpl()
+                # Use current city timezone or UTC
+                tz_str = city.timezone if city and city.timezone else 'UTC'
+                
+                fetch_result = await fetcher.fetch(
+                    attraction_id=attr.id,
+                    place_id=attr.place_id,
+                    latitude=float(attr.latitude),
+                    longitude=float(attr.longitude),
+                    timezone_str=tz_str,
+                    attraction_name=attr.name,
+                    city_name=city.name if city else None,
+                    country=city.country if city else None
+                )
+                
+                if fetch_result and fetch_result.get('forecast_days'):
+                    # Store data (commits internally in a separate session)
+                    store_weather_data(attr.id, fetch_result['forecast_days'])
+                    
+                    # Commit current read-transaction to ensure we see the new data 
+                    # from the other transaction (breaking REPEATABLE READ snapshot)
+                    session.commit()
+                    
+                    # Re-query weather data
+                    weather = session.query(models.WeatherForecast).filter(
+                        models.WeatherForecast.attraction_id == attr.id,
+                        models.WeatherForecast.date_local >= today_date
+                    ).order_by(models.WeatherForecast.date_local).all()
+                    
+                    logger.info(f"Successfully refreshed weather for {attr.name}")
+            except Exception as e:
+                logger.warning(f"Failed to fetch weather immediately: {e}")
+
         map_data = session.query(models.MapSnapshot).filter_by(attraction_id=attr.id).first()
         metadata = session.query(models.AttractionMetadata).filter_by(attraction_id=attr.id).first()
 
@@ -632,7 +672,9 @@ async def get_attraction(
             "hero_images": [
                 {
                     "url": f"{settings.API_BASE_URL}/api/v1/image/{attr.id}/{img.position}",
-                    "alt_text": img.alt_text
+                    "alt_text": img.alt_text,
+                    "gcs_url_hero": img.gcs_url_hero,
+                    "gcs_url_card": img.gcs_url_card
                 }
                 for img in hero_images
             ],
@@ -671,13 +713,13 @@ async def get_attraction(
             "weather": [
                 {
                     "date": w.date_local.isoformat() if w.date_local else None,
-                    "temperature_c": float(w.temperature_c) if w.temperature_c else None,
-                    "feels_like_c": float(w.feels_like_c) if w.feels_like_c else None,
-                    "min_temperature_c": float(w.min_temperature_c) if w.min_temperature_c else None,
-                    "max_temperature_c": float(w.max_temperature_c) if w.max_temperature_c else None,
+                    "temperature_c": float(w.temperature_c) if w.temperature_c is not None else None,
+                    "feels_like_c": float(w.feels_like_c) if w.feels_like_c is not None else None,
+                    "min_temperature_c": float(w.min_temperature_c) if w.min_temperature_c is not None else None,
+                    "max_temperature_c": float(w.max_temperature_c) if w.max_temperature_c is not None else None,
                     "summary": w.summary,
-                    "precipitation_mm": float(w.precipitation_mm) if w.precipitation_mm else None,
-                    "wind_speed_kph": float(w.wind_speed_kph) if w.wind_speed_kph else None,
+                    "precipitation_mm": float(w.precipitation_mm) if w.precipitation_mm is not None else None,
+                    "wind_speed_kph": float(w.wind_speed_kph) if w.wind_speed_kph is not None else None,
                     "humidity_percent": w.humidity_percent,
                     "icon_url": w.icon_url
                 }

@@ -152,6 +152,7 @@ class NearbyAttractionItemDTO:
     user_ratings_total: Optional[int] = None
     review_count: Optional[int] = None
     image_url: Optional[str] = None
+    gcs_url: Optional[str] = None
     link: Optional[str] = None
     vicinity: Optional[str] = None
     audience_type: Optional[str] = None

@@ -545,3 +545,59 @@ def refresh_visitor_info():
     except Exception as e:
         logger.error(f"Visitor info refresh task failed: {e}")
         return {"status": "error", "error": str(e)}
+
+
+@celery_app.task(name="app.tasks.refresh_tasks.refresh_weather_for_attraction")
+def refresh_weather_for_attraction(attraction_id: int):
+    """On-demand task to refresh weather for a specific attraction."""
+    logger.info(f"On-demand weather refresh for attraction {attraction_id}")
+
+    session = SessionLocal()
+    try:
+        attraction, city = (
+            session.query(models.Attraction, models.City)
+            .join(models.City, models.Attraction.city_id == models.City.id)
+            .filter(models.Attraction.id == attraction_id)
+            .first()
+        ) or (None, None)
+
+        if not attraction:
+            logger.error(f"Attraction {attraction_id} not found")
+            return {"status": "error", "error": "Attraction not found"}
+
+        if not attraction.latitude or not attraction.longitude:
+            logger.warning(f"Attraction {attraction_id} missing coordinates")
+            return {"status": "error", "error": "Missing coordinates"}
+
+        fetcher = WeatherFetcherImpl()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        result = loop.run_until_complete(
+            fetcher.fetch(
+                attraction_id=attraction_id,
+                place_id=attraction.place_id,
+                latitude=float(attraction.latitude),
+                longitude=float(attraction.longitude),
+                timezone_str=city.timezone or 'UTC',
+                attraction_name=attraction.name,
+                city_name=city.name,
+                country=city.country
+            )
+        )
+        loop.close()
+
+        if result and result.get('forecast_days'):
+            if store_weather_data(attraction_id, result['forecast_days']):
+                logger.info(f"✓ Weather refreshed for {attraction.name}")
+                return {"status": "success", "attraction_id": attraction_id}
+            else:
+                return {"status": "error", "error": "Failed to store"}
+        else:
+            return {"status": "error", "error": "No weather data"}
+
+    except Exception as e:
+        logger.error(f"Weather refresh error for {attraction_id}: {e}")
+        return {"status": "error", "error": str(e)}
+    finally:
+        session.close()
+
