@@ -10,6 +10,11 @@ from app.constants import EARTH_RADIUS_KM
 logger = logging.getLogger(__name__)
 
 
+class PlaceIdInvalidError(Exception):
+    """Raised when a place_id returns 403 Forbidden (invalid/stale)."""
+    pass
+
+
 class GooglePlacesClient:
     """Client for Google Places API (Place Details, Photos, Nearby Search)."""
     
@@ -111,13 +116,18 @@ class GooglePlacesClient:
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(url, headers=headers)
+                if response.status_code == 403:
+                    logger.warning(f"403 Forbidden - place_id {place_id} appears invalid/stale")
+                    raise PlaceIdInvalidError(f"Place ID {place_id} returned 403 Forbidden")
                 response.raise_for_status()
                 data = response.json()
                 return data
+        except PlaceIdInvalidError:
+            raise  # Re-raise to propagate to caller
         except Exception as e:
             logger.error(f"Error fetching place details: {e}")
             return None
-    
+
     async def get_place_photo_urls(
         self,
         place_id: str,
@@ -155,6 +165,9 @@ class GooglePlacesClient:
                         "key": self.api_key,
                     }
                     resp = await client.get(url, params=params)
+                    if resp.status_code == 403:
+                        logger.error(f"403 Forbidden error fetching photo for {photo_name}. Check API key and permissions.")
+                        continue
                     resp.raise_for_status()
                     data = resp.json()
                     photo_uri = data.get("photoUri")
@@ -308,6 +321,9 @@ class GooglePlacesClient:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.get(url, headers=headers)
 
+                if response.status_code == 403:
+                    logger.error(f"403 Forbidden error fetching place details for {place_id}. Check API key and permissions.")
+                    return None
                 if response.status_code != 200:
                     logger.warning(f"Place details fetch failed for {place_id}: {response.status_code}")
                     return None

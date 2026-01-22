@@ -22,6 +22,7 @@ from app.infrastructure.persistence.db import SessionLocal
 from app.infrastructure.persistence import models
 from app.infrastructure.external_apis.hero_images_fetcher import GooglePlacesHeroImagesFetcher
 from app.infrastructure.external_apis.gcs_client import gcs_client, image_processor
+from app.infrastructure.external_apis.google_places_client import PlaceIdInvalidError
 
 logger = logging.getLogger(__name__)
 
@@ -228,6 +229,11 @@ async def process_card_image(
             "card_url": card_url,
             "hero_url": hero_url
         }
+
+    except PlaceIdInvalidError as e:
+        session.rollback()
+        logger.warning(f"Invalid place_id for {attraction_name}: {e}")
+        return {"status": "invalid_place_id", "error": str(e)}
 
     except Exception as e:
         session.rollback()

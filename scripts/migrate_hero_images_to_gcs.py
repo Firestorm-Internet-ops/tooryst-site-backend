@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from app.infrastructure.persistence.db import SessionLocal
 from app.infrastructure.persistence import models
 from app.tasks.hero_images_refresh_tasks import process_card_image
+from app.infrastructure.external_apis.google_places_client import GooglePlacesClient
 
 # Ensure logs directory exists
 log_dir = Path(__file__).parent.parent / 'logs'
@@ -97,6 +98,39 @@ async def migrate_single_attraction(attraction: dict, dry_run: bool = False) -> 
             place_id=attraction['place_id'],
             attraction_name=attraction['name']
         )
+
+        # Handle invalid place_id by fetching a new one
+        if result.get('status') == 'invalid_place_id':
+            logger.info(f"Attempting to fetch new place_id for {attraction['name']}")
+
+            client = GooglePlacesClient()
+            search_query = f"{attraction['name']} {attraction['city_name']}"
+            new_place = await client.find_place(search_query)
+
+            if new_place and new_place.get('place_id'):
+                new_place_id = new_place['place_id']
+                logger.info(f"Found new place_id: {new_place_id}")
+
+                # Update database
+                session = SessionLocal()
+                try:
+                    db_attraction = session.query(models.Attraction).filter_by(id=attraction['id']).first()
+                    if db_attraction:
+                        db_attraction.place_id = new_place_id
+                        session.commit()
+                        logger.info(f"Updated place_id in database for {attraction['name']}")
+                finally:
+                    session.close()
+
+                # Retry with new place_id
+                result = await process_card_image(
+                    attraction_id=attraction['id'],
+                    place_id=new_place_id,
+                    attraction_name=attraction['name']
+                )
+            else:
+                logger.error(f"Could not find new place_id for {attraction['name']}")
+
         return {
             "attraction": attraction['name'],
             "slug": attraction['slug'],
@@ -177,6 +211,8 @@ async def run_migration(batch_size: int = None, start_from: int = 0, dry_run: bo
         for r in results:
             if r.get('status') == 'error':
                 logger.info(f"  - {r['attraction']}: {r.get('error', 'Unknown')}")
+            elif r.get('status') == 'invalid_place_id':
+                logger.info(f"  - {r['attraction']}: Invalid place_id (could not find replacement)")
     
     # Log successful additions (or dry run processed)
     logger.info("\nAdded images for processing:")
