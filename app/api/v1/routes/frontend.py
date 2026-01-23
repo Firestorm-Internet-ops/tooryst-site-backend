@@ -89,8 +89,7 @@ models.HeroImage.gcs_url_card.label("hero_image")
             .join(models.City, models.Attraction.city_id == models.City.id)
             .outerjoin(
                 models.HeroImage,
-                (models.Attraction.id == models.HeroImage.attraction_id) &
-                (models.HeroImage.position == 1)
+                models.Attraction.id == models.HeroImage.attraction_id
             )
             .order_by(
                 desc(models.HeroImage.last_refreshed_at.isnot(None)),
@@ -259,8 +258,7 @@ models.HeroImage.gcs_url_card.label("hero_image")
             .filter(models.Attraction.city_id == city.id)
             .outerjoin(
                 models.HeroImage,
-                (models.Attraction.id == models.HeroImage.attraction_id) &
-                (models.HeroImage.position == 1)
+                models.Attraction.id == models.HeroImage.attraction_id
             )
             .order_by(
                 desc(models.HeroImage.last_refreshed_at.isnot(None)),
@@ -350,7 +348,7 @@ models.HeroImage.gcs_url_card.label("hero_image")
             .filter(models.Attraction.city_id == city.id)
             .outerjoin(
                 models.HeroImage,
-                (models.Attraction.id == models.HeroImage.attraction_id) & (models.HeroImage.position == 1)
+                models.Attraction.id == models.HeroImage.attraction_id
             )
             .order_by(
                 desc(models.HeroImage.last_refreshed_at.isnot(None)),
@@ -424,8 +422,7 @@ models.HeroImage.gcs_url_card.label("hero_image")
             .join(models.City, models.Attraction.city_id == models.City.id)
             .outerjoin(
                 models.HeroImage,
-                (models.Attraction.id == models.HeroImage.attraction_id) &
-                (models.HeroImage.position == 1)
+                models.Attraction.id == models.HeroImage.attraction_id
             )
         )
 
@@ -1022,8 +1019,7 @@ async def search(q: str = Query(..., description="Search query")):
             .join(models.City, models.Attraction.city_id == models.City.id)
             .outerjoin(
                 models.HeroImage,
-                (models.Attraction.id == models.HeroImage.attraction_id) &
-                (models.HeroImage.position == 1)
+                models.Attraction.id == models.HeroImage.attraction_id
             )
             .filter(
                 or_(

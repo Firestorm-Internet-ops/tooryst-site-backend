@@ -57,7 +57,8 @@ async def fetch_and_process_hero_images(
     attraction_id: int,
     place_id: str,
     attraction_name: str,
-    max_images: int = 10
+    max_images: int = 10,
+    skip_count: int = 0
 ) -> Optional[List[Dict[str, Any]]]:
     """Fetch hero images from Google Places and process to WebP.
 
@@ -82,7 +83,11 @@ async def fetch_and_process_hero_images(
             logger.warning(f"No photos found for {attraction_name}")
             return None
 
-        # Limit to max_images
+        # Apply skip and limit
+        if skip_count > 0:
+            logger.info(f"Skipping first {skip_count} photo references for {attraction_name}")
+            photo_refs = photo_refs[skip_count:]
+            
         photo_refs = photo_refs[:max_images]
 
         # 2. Download and process each photo
@@ -111,9 +116,9 @@ async def fetch_and_process_hero_images(
                 base64_data = base64.b64encode(webp_bytes).decode('utf-8')
 
                 images.append({
-                    "position": idx + 1,
+                    "position": idx + 1 + skip_count,
                     "data": f"data:image/webp;base64,{base64_data}",
-                    "alt": f"{attraction_name} - image {idx + 1}",
+                    "alt": f"{attraction_name} - image {idx + 1 + skip_count}",
                     "width": width,
                     "height": height
                 })
@@ -234,30 +239,59 @@ def prefetch_hero_images(self, attraction_id: int) -> Dict[str, Any]:
         if not attraction.place_id:
             return {"status": "error", "error": "Attraction has no place_id"}
 
-        # Fetch and process images
+        # 1. Start with the existing GCS hero image if available (Position 0)
+        final_images = []
+        hero_img = session.query(models.HeroImage).filter_by(
+            attraction_id=attraction_id, 
+            position=0
+        ).first()
+
+        if hero_img and hero_img.gcs_url_hero:
+            logger.info(f"Using GCS URL for position 0 of attraction {attraction_id}")
+            final_images.append({
+                "position": 0,
+                "data": hero_img.gcs_url_hero,
+                "alt": f"{attraction.name} - Official Hero",
+                "width": 1600,
+                "height": 900
+            })
+
+        # 2. Fetch and process remaining images (max 9 more from Google)
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
         try:
-            images = loop.run_until_complete(
+            # We want total 10 images. If we have 1 already, fetch 9 more.
+            # We skip the 1st one if we use it, but typically position 0 in DB
+            # might be the same as the first one from Google.
+            # For simplicity, we'll skip the first one from Google if we have a GCS hero.
+            prefetch_count = 10 - len(final_images)
+            skip_count = 1 if len(final_images) > 0 else 0
+
+            prefetched_images = loop.run_until_complete(
                 fetch_and_process_hero_images(
                     attraction_id=attraction.id,
                     place_id=attraction.place_id,
-                    attraction_name=attraction.name
+                    attraction_name=attraction.name,
+                    max_images=prefetch_count,
+                    skip_count=skip_count
                 )
             )
         finally:
             loop.close()
 
-        if not images:
+        if prefetched_images:
+            final_images.extend(prefetched_images)
+
+        if not final_images:
             return {"status": "no_photos", "attraction_id": attraction_id}
 
-        # Cache the images
-        if cache_hero_images(attraction_id, images):
+        # Cache the combined images
+        if cache_hero_images(attraction_id, final_images):
             return {
                 "status": "success",
                 "attraction_id": attraction_id,
-                "count": len(images)
+                "count": len(final_images)
             }
         else:
             return {"status": "error", "error": "Failed to cache images"}
@@ -324,23 +358,47 @@ async def fetch_hero_images_on_demand(attraction_id: int) -> Optional[Dict[str, 
         if not attraction or not attraction.place_id:
             return None
 
-        # Fetch images
-        images = await fetch_and_process_hero_images(
+        # 1. Get GCS hero if exists
+        final_images = []
+        hero_img = session.query(models.HeroImage).filter_by(
+            attraction_id=attraction_id, 
+            position=0
+        ).first()
+
+        if hero_img and hero_img.gcs_url_hero:
+            final_images.append({
+                "position": 0,
+                "data": hero_img.gcs_url_hero,
+                "alt": f"{attraction.name} - Official Hero",
+                "width": 1600,
+                "height": 900
+            })
+
+        # 2. Fetch images from Google (remaining 9)
+        prefetch_count = 10 - len(final_images)
+        skip_count = 1 if len(final_images) > 0 else 0
+
+        prefetched_images = await fetch_and_process_hero_images(
             attraction_id=attraction.id,
             place_id=attraction.place_id,
-            attraction_name=attraction.name
+            attraction_name=attraction.name,
+            max_images=prefetch_count,
+            skip_count=skip_count
         )
 
-        if not images:
+        if prefetched_images:
+            final_images.extend(prefetched_images)
+
+        if not final_images:
             return None
 
         # Cache for future requests
-        cache_hero_images(attraction_id, images)
+        cache_hero_images(attraction_id, final_images)
 
         return {
-            "images": images,
+            "images": final_images,
             "fetched_at": datetime.utcnow().isoformat(),
-            "count": len(images),
+            "count": len(final_images),
             "source": "fetched"
         }
 
