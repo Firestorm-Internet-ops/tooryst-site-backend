@@ -143,7 +143,7 @@ class SitemapGenerator:
 
             for city in cities:
                 url = SitemapUrl(
-                    loc=urljoin(self.site_url, f"/cities/{city.slug}"),
+                    loc=urljoin(self.site_url, f"/{city.slug}"),
                     lastmod=self.format_date(city.updated_at),
                     changefreq="weekly",
                     priority="0.8"
@@ -160,7 +160,7 @@ class SitemapGenerator:
     def generate_attraction_urls(self, db: Session) -> List[SitemapUrl]:
         """Generate URLs for attraction pages."""
         try:
-            attractions = db.query(models.Attraction).order_by(models.Attraction.name).all()
+            attractions = db.query(models.Attraction).join(models.City).order_by(models.Attraction.name).all()
             urls = []
 
             for attraction in attractions:
@@ -170,7 +170,7 @@ class SitemapGenerator:
                     images.append(urljoin(self.site_url, attraction.hero_image))
 
                 url = SitemapUrl(
-                    loc=urljoin(self.site_url, f"/attractions/{attraction.slug}"),
+                    loc=urljoin(self.site_url, f"/{attraction.city.slug}/{attraction.slug}"),
                     lastmod=self.format_date(attraction.updated_at),
                     changefreq="daily",
                     priority="0.7",
