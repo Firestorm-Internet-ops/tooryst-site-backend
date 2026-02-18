@@ -84,7 +84,7 @@ async def get_homepage():
             session.query(
                 models.Attraction,
                 models.City,
-models.HeroImage.gcs_url_card.label("hero_image")
+            models.HeroImage.url.label("hero_image")
             )
             .join(models.City, models.Attraction.city_id == models.City.id)
             .outerjoin(
@@ -253,7 +253,7 @@ async def get_city(city_slug: str):
         attractions = (
             session.query(
                 models.Attraction,
-models.HeroImage.gcs_url_card.label("hero_image")
+            models.HeroImage.url.label("hero_image")
             )
             .filter(models.Attraction.city_id == city.id)
             .outerjoin(
@@ -343,7 +343,7 @@ async def get_city_attractions(
         attractions = (
             session.query(
                 models.Attraction,
-models.HeroImage.gcs_url_card.label("hero_image")
+            models.HeroImage.url.label("hero_image")
             )
             .filter(models.Attraction.city_id == city.id)
             .outerjoin(
@@ -417,7 +417,7 @@ async def get_attractions(
             session.query(
                 models.Attraction,
                 models.City,
-models.HeroImage.gcs_url_card.label("hero_image")
+            models.HeroImage.url.label("hero_image")
             )
             .join(models.City, models.Attraction.city_id == models.City.id)
             .outerjoin(
@@ -1014,7 +1014,7 @@ async def search(q: str = Query(..., description="Search query")):
                 models.City.name.label('city_name'),
                 models.City.country.label('country_name'),
                 models.City.slug.label('city_slug'),
-                models.HeroImage.gcs_url_card.label("hero_image")
+                models.HeroImage.url.label("hero_image")
             )
             .join(models.City, models.Attraction.city_id == models.City.id)
             .outerjoin(
