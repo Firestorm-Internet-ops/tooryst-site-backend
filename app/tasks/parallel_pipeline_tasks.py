@@ -145,6 +145,22 @@ def process_stage_metadata(pipeline_run_id: int, attraction_id: int):
 
             pipe_logger.info(f"[Stage 1] Processing: {attraction.name}")
 
+            # Skip if metadata was refreshed within the last 60 days
+            existing_metadata = (
+                session.query(models.AttractionMetadata)
+                .filter(models.AttractionMetadata.attraction_id == attraction_id)
+                .first()
+            )
+            if existing_metadata and existing_metadata.updated_at and \
+                    (datetime.utcnow() - existing_metadata.updated_at).days < 60:
+                pipe_logger.info(
+                    f"[Stage 1] Skipping {attraction.name} — metadata is fresh ({existing_metadata.updated_at.date()})"
+                )
+                stage_manager.release_stage_slot('metadata')
+                stage_manager.push_to_stage('hero_images', attraction_id, pipeline_run_id)
+                process_stage_hero_images.delay(pipeline_run_id, attraction_id)
+                return {'status': 'skipped_fresh'}
+
             # Fetch metadata
             fetcher = MetadataFetcherImpl()
             loop = asyncio.new_event_loop()
@@ -244,6 +260,25 @@ def process_stage_hero_images(pipeline_run_id: int, attraction_id: int):
             city = session.query(models.City).filter_by(id=attraction.city_id).first()
 
             pipe_logger.info(f"[Stage 2] Processing: {attraction.name}")
+
+            # Skip if GCS-processed images already exist for this attraction
+            existing_gcs_images = (
+                session.query(models.HeroImage)
+                .filter(
+                    models.HeroImage.attraction_id == attraction_id,
+                    models.HeroImage.gcs_url_card.isnot(None),
+                    models.HeroImage.gcs_url_hero.isnot(None)
+                )
+                .count()
+            )
+            if existing_gcs_images > 0:
+                pipe_logger.info(
+                    f"[Stage 2] Skipping {attraction.name} — {existing_gcs_images} GCS image(s) already exist"
+                )
+                stage_manager.release_stage_slot('hero_images')
+                stage_manager.push_to_stage('best_time', attraction_id, pipeline_run_id)
+                process_stage_best_time.delay(pipeline_run_id, attraction_id)
+                return {'status': 'skipped_fresh'}
 
             # Fetch hero images
             fetcher = GooglePlacesHeroImagesFetcher()
@@ -880,6 +915,29 @@ def process_stage_reviews(pipeline_run_id: int, attraction_id: int):
             city = session.query(models.City).filter_by(id=attraction.city_id).first()
             pipe_logger.info(f"[Stage 7] Processing: {attraction.name}")
 
+            # Skip if reviews exist and were fetched within the last 60 days
+            from sqlalchemy import func as sqlfunc
+            last_review = (
+                session.query(sqlfunc.max(models.Review.created_at))
+                .filter(models.Review.attraction_id == attraction_id)
+                .scalar()
+            )
+            review_count_db = (
+                session.query(sqlfunc.count(models.Review.id))
+                .filter(models.Review.attraction_id == attraction_id)
+                .scalar()
+            )
+
+            if last_review and review_count_db >= 5 and \
+                    (datetime.utcnow() - last_review).days < 60:
+                pipe_logger.info(
+                    f"[Stage 7] Skipping {attraction.name} — {review_count_db} reviews, last fetched {last_review.date()}"
+                )
+                stage_manager.release_stage_slot('reviews')
+                stage_manager.push_to_stage('social_videos', attraction_id, pipeline_run_id)
+                process_stage_social_videos.delay(pipeline_run_id, attraction_id)
+                return {'status': 'skipped_fresh'}
+
             fetcher = ReviewsFetcherImpl()
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -1123,6 +1181,21 @@ def process_stage_nearby(pipeline_run_id: int, attraction_id: int):
 
             city = session.query(models.City).filter_by(id=attraction.city_id).first()
             pipe_logger.info(f"[Stage 9] Processing: {attraction.name}")
+
+            # Skip if nearby data was refreshed within the last 60 days
+            last_nearby = (
+                session.query(func.max(models.NearbyAttraction.created_at))
+                .filter(models.NearbyAttraction.attraction_id == attraction_id)
+                .scalar()
+            )
+            if last_nearby and (datetime.utcnow() - last_nearby).days < 60:
+                pipe_logger.info(
+                    f"[Stage 9] Skipping {attraction.name} — nearby data is fresh ({last_nearby.date()})"
+                )
+                stage_manager.release_stage_slot('nearby')
+                stage_manager.push_to_stage('audiences', attraction_id, pipeline_run_id)
+                process_stage_audiences.delay(pipeline_run_id, attraction_id)
+                return {'status': 'skipped_fresh'}
 
             # Validate coordinates
             latitude = getattr(attraction, "latitude", None)

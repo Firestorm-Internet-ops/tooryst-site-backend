@@ -2,6 +2,7 @@
 import asyncio
 import logging
 from typing import List, Optional
+from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
@@ -143,7 +144,7 @@ async def get_hero_image_proxy(attraction_id: int, position: int):
 
     session = SessionLocal()
     try:
-        # Get hero image record for this position
+        # Check DB first for this specific position
         hero = (
             session.query(models.HeroImage)
             .filter(
@@ -153,17 +154,15 @@ async def get_hero_image_proxy(attraction_id: int, position: int):
             .first()
         )
 
-        if not hero:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Image not found for attraction {attraction_id} at position {position}"
-            )
+        if hero:
+            # If DB has a url (even without GCS), serve it directly
+            image_url = hero.gcs_url_hero or hero.gcs_url_card or hero.url
+            if image_url:
+                logger.debug(f"Cache hit: redirecting to {image_url}")
+                return RedirectResponse(image_url, status_code=302)
 
-        # If already in GCS, redirect immediately
-        if hero.gcs_url_hero:
-            logger.debug(f"Cache hit: redirecting to {hero.gcs_url_hero}")
-            return RedirectResponse(hero.gcs_url_hero, status_code=302)
-
+        # Only fall through to Google fetch if no DB record (or no URL)
+        
         # Need to fetch from Google Places and cache to GCS
         attraction = (
             session.query(models.Attraction)
@@ -223,9 +222,17 @@ async def get_hero_image_proxy(attraction_id: int, position: int):
             raise HTTPException(status_code=500, detail="Failed to upload image to GCS")
 
         # Update database with GCS URL
+        if not hero:
+            hero = models.HeroImage(
+                attraction_id=attraction_id,
+                position=position,
+                url=cdn_url,
+                alt_text=f"{attraction.name} - Image {position+1}",
+                created_at=datetime.utcnow()
+            )
+            session.add(hero)
+        
         hero.gcs_url_hero = cdn_url
-
-        # Also store the photo reference for future refreshes
         if not hero.google_photo_reference:
             hero.google_photo_reference = photo_reference
 

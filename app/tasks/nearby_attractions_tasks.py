@@ -90,7 +90,7 @@ def get_attractions_needing_nearby_update() -> List[Dict[str, Any]]:
             .subquery()
         )
         
-        threshold_date = datetime.utcnow() - timedelta(days=30)
+        threshold_date = datetime.utcnow() - timedelta(days=90)
         min_nearby_threshold = settings.NEARBY_ATTRACTIONS_COUNT  # From config
         
         attractions = (
@@ -392,18 +392,40 @@ def enrich_nearby_attraction_from_google(nearby_attraction_id: int) -> Dict[str,
                 updates['review_count'] = nearby.review_count
                 logger.info(f"  ✓ Set review_count: {nearby.review_count}")
             
-            # Get first photo if missing
+            # Get first photo if missing — download and upload to GCS for a permanent URL
             if not nearby.image_url and place_details.get('photos'):
                 photos = place_details.get('photos', [])
                 if photos:
-                    # For Places API v1, photos have a 'name' field
                     photo_name = photos[0].get('name')
                     if photo_name:
-                        # Construct the photo URL using the photo name
-                        image_url = f"https://places.googleapis.com/v1/{photo_name}/media?maxWidthPx=400&key={places_client.api_key}"
-                        nearby.image_url = image_url
-                        updates['image_url'] = image_url
-                        logger.info(f"  ✓ Set image_url")
+                        photo_url = f"https://places.googleapis.com/v1/{photo_name}/media?maxWidthPx=400&key={places_client.api_key}"
+                        try:
+                            import httpx
+                            from app.infrastructure.external_apis.gcs_client import gcs_client, image_processor
+                            with httpx.Client(timeout=30, follow_redirects=True) as http:
+                                resp = http.get(photo_url)
+                            if resp.status_code == 200 and resp.content:
+                                webp_bytes, _, _ = image_processor.process_image(resp.content, 400)
+                                cdn_url = gcs_client.upload_nearby_attraction_image(
+                                    attraction_id=nearby.attraction_id,
+                                    nearby_attraction_id=nearby.id,
+                                    image_bytes=webp_bytes
+                                )
+                                if cdn_url:
+                                    nearby.gcs_url = cdn_url
+                                    nearby.image_url = cdn_url
+                                    updates['gcs_url'] = cdn_url
+                                    logger.info(f"  ✓ Uploaded image to GCS: {cdn_url}")
+                                else:
+                                    nearby.image_url = photo_url
+                                    updates['image_url'] = photo_url
+                            else:
+                                nearby.image_url = photo_url
+                                updates['image_url'] = photo_url
+                        except Exception as img_err:
+                            logger.warning(f"Failed to upload image to GCS for {nearby.name}: {img_err}")
+                            nearby.image_url = photo_url
+                            updates['image_url'] = photo_url
             
             # Update the database
             session.commit()

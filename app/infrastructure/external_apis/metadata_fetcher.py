@@ -37,11 +37,24 @@ class MetadataFetcherImpl:
             logger.warning(f"Missing attraction_name or city_name for attraction {attraction_id}")
             return None
         
-        # Try Google Places API first (v1 Place Details)
+        # Try Google Places API first (v1 Place Details).
+        # Use a narrower field mask — MetadataFetcher only reads phone, website,
+        # hours, editorialSummary, and basic fields.  reviews and photos are
+        # excluded here; Stage 7 (ReviewsFetcher) and Stage 2 (HeroImages)
+        # fetch with the default full mask which is then cached for 24 h.
+        METADATA_FIELD_MASK = (
+            "displayName,formattedAddress,location,"
+            "internationalPhoneNumber,nationalPhoneNumber,"
+            "websiteUri,regularOpeningHours,currentOpeningHours,"
+            "editorialSummary,types,businessStatus,"
+            "rating,userRatingCount,timeZone"
+        )
         if place_id:
             try:
                 logger.info(f"Fetching metadata from Google Places for {attraction_name}")
-                place_data = await self.places_client.get_place_details(place_id)
+                place_data = await self.places_client.get_place_details(
+                    place_id, field_mask=METADATA_FIELD_MASK
+                )
                 
                 if place_data:
                     # Process Google Places data

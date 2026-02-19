@@ -131,10 +131,11 @@ celery_app.conf.beat_schedule = {
         ),
     },
     
-    # Nearby Attractions - Refresh nearby attractions for attractions that need it (Daily at 2 AM)
+    # Nearby Attractions - Refresh nearby attractions for attractions that need it (Weekly Monday at 2 AM)
     "refresh-nearby-attractions-daily": {
         "task": "app.tasks.nearby_attractions_tasks.refresh_all_nearby_attractions",
         "schedule": crontab(
+            day_of_week=1,
             hour=2,
             minute=0
         ),

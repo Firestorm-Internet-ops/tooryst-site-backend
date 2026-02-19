@@ -289,19 +289,23 @@ class NearbyAttractionsFetcherImpl:
                 if place_id == exclude_place_id or place_id in exclude_place_ids:
                     continue
                 
-                # Get photo URL
-                photo_reference = None
-                if place.get("photos") and len(place["photos"]) > 0:
-                    photo_reference = place["photos"][0].get("photo_reference")
-
+                # Get photo URL — prefer the pre-built ``photo_url`` key that
+                # the New Nearby Search API response includes; fall back to the
+                # legacy ``photo_reference`` path for any cached legacy entries.
                 image_url = None
-                if photo_reference:
-                    image_url = self.places_client.get_photo_url(
-                        photo_reference=photo_reference,
-                        max_width=400
-                    )
-                else:
-                    logger.debug(f"No photo_reference for Google place: {place.get('name')}")
+                if place.get("photos") and len(place["photos"]) > 0:
+                    photo = place["photos"][0]
+                    photo_url = photo.get("photo_url")
+                    photo_reference = photo.get("photo_reference")
+                    if photo_url:
+                        image_url = photo_url
+                    elif photo_reference:
+                        image_url = self.places_client.get_photo_url(
+                            photo_reference=photo_reference,
+                            max_width=400,
+                        )
+                    else:
+                        logger.debug(f"No photo for Google place: {place.get('name')}")
 
                 # Calculate distance
                 distance_km = place.get("distance_km")

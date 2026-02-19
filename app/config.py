@@ -35,8 +35,8 @@ class Settings(BaseSettings):
     CARD_IMAGES_DAILY_BATCH_SIZE: int = int(os.getenv("CARD_IMAGES_DAILY_BATCH_SIZE", "40"))
     CARD_IMAGE_REFRESH_DAYS: int = int(os.getenv("CARD_IMAGE_REFRESH_DAYS", "29"))
     CARD_IMAGE_REFRESH_TARGET_DAYS: int = int(os.getenv("CARD_IMAGE_REFRESH_TARGET_DAYS", "25"))
-    # Hero carousel cache (Redis - temporary, 1-hour TTL)
-    HERO_IMAGES_CACHE_TTL: int = int(os.getenv("HERO_IMAGES_CACHE_TTL", "3600"))
+    # Hero carousel cache (Redis - 24-hour TTL; carousel images are static)
+    HERO_IMAGES_CACHE_TTL: int = int(os.getenv("HERO_IMAGES_CACHE_TTL", "86400"))
 
     # ===== Distance & Location =====
     NEARBY_MAX_DISTANCE_KM: float = float(os.getenv("NEARBY_MAX_DISTANCE_KM", "10.0"))

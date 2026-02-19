@@ -75,44 +75,72 @@ class GooglePlacesClient:
             logger.error(f"Error finding place: {e}")
             return None
     
-    async def get_place_details(self, place_id: str) -> Optional[Dict[str, Any]]:
-        """Fetch place details using the latest Places API (v1 Place Details).
-        
-        Returns raw API response or None if error.
+    # Default full field mask — all fields needed by any pipeline stage.
+    # Cached responses use this mask so all downstream stages share one API call.
+    _FULL_FIELD_MASK = ",".join([
+        "displayName",
+        "formattedAddress",
+        "location",
+        "internationalPhoneNumber",
+        "nationalPhoneNumber",
+        "websiteUri",
+        "regularOpeningHours",
+        "currentOpeningHours",
+        "editorialSummary",
+        "types",
+        "businessStatus",
+        "rating",
+        "userRatingCount",
+        "photos",    # needed by Stage 2 (hero images) and nearby enrichment
+        "reviews",   # needed by Stage 7
+        "timeZone",  # needed by file watcher timezone extraction
+    ])
+
+    async def get_place_details(
+        self,
+        place_id: str,
+        field_mask: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Fetch place details using Places API (New) v1.
+
+        Args:
+            place_id: Google Place ID.
+            field_mask: Optional comma-separated field mask. When None the full
+                default mask is used and the response is cached for 24 h (keyed
+                by place_id). When a custom mask is supplied the cache is
+                bypassed so a partial response never pollutes the full-mask
+                cache entry that other pipeline stages depend on.
+
+        Returns raw API response dict or None on error.
         """
         if not self.api_key:
             logger.error("Cannot fetch place details: API key missing")
             return None
-        
-        # Places API (New) endpoint
+
+        use_cache = field_mask is None
+        effective_mask = field_mask or self._FULL_FIELD_MASK
+
+        # --- cache read (full-mask requests only) ---
+        cache = None
+        if use_cache:
+            try:
+                from app.infrastructure.external_apis.cache_client import get_cache
+                cache = get_cache()
+                cached = await cache.get("place_details", place_id=place_id)
+                if cached is not None:
+                    logger.debug(f"[Places cache HIT] {place_id}")
+                    return cached
+            except Exception as cache_err:
+                logger.debug(f"Cache read skipped (non-fatal): {cache_err}")
+
+        # --- API call ---
         url = f"https://places.googleapis.com/v1/places/{place_id}"
-        
-        # Request only the fields we need to keep costs down
-        field_mask = ",".join([
-            "displayName",
-            "formattedAddress",
-            "location",
-            "internationalPhoneNumber",
-            "nationalPhoneNumber",
-            "websiteUri",
-            "regularOpeningHours",
-            "currentOpeningHours",
-            "editorialSummary",
-            "types",
-            "businessStatus",
-            "rating",
-            "userRatingCount",
-            "photos",  # include photos for downstream image fetching
-            "reviews",  # include reviews for reviews fetcher
-            "timeZone"  # include timezone for best time calculations
-        ])
-        
         headers = {
             "Content-Type": "application/json",
             "X-Goog-Api-Key": self.api_key,
-            "X-Goog-FieldMask": field_mask
+            "X-Goog-FieldMask": effective_mask,
         }
-        
+
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(url, headers=headers)
@@ -121,9 +149,20 @@ class GooglePlacesClient:
                     raise PlaceIdInvalidError(f"Place ID {place_id} returned 403 Forbidden")
                 response.raise_for_status()
                 data = response.json()
-                return data
+
+            # --- cache write (full-mask requests only) ---
+            if use_cache and data and cache:
+                try:
+                    await cache.set(
+                        data, ttl_seconds=86400, prefix="place_details", place_id=place_id
+                    )
+                    logger.debug(f"[Places cache SET] {place_id}")
+                except Exception as cache_err:
+                    logger.debug(f"Cache write skipped (non-fatal): {cache_err}")
+
+            return data
         except PlaceIdInvalidError:
-            raise  # Re-raise to propagate to caller
+            raise
         except Exception as e:
             logger.error(f"Error fetching place details: {e}")
             return None
@@ -195,35 +234,97 @@ class GooglePlacesClient:
         latitude: float,
         longitude: float,
         radius: int = 5000,
-        place_type: Optional[str] = "tourist_attraction"
+        place_type: Optional[str] = "tourist_attraction",
     ) -> Optional[List[Dict[str, Any]]]:
-        """Search for nearby places.
-        
+        """Search for nearby places using Places API (New) v1 Nearby Search.
+
+        Uses a Basic-tier field mask to minimise billing.  The response is
+        normalised to the same shape the legacy nearbysearch endpoint returned
+        so callers don't need to change, with one addition: each photo dict
+        also contains a ``photo_url`` key with the pre-built media URL (because
+        the New API uses a ``name`` path rather than a legacy photo_reference).
+
         Returns list of places or None if error.
         """
         if not self.api_key:
             logger.error("Cannot fetch nearby places: API key missing")
             return None
-        
-        url = f"{self.BASE_URL}/place/nearbysearch/json"
-        params = {
-            "location": f"{latitude},{longitude}",
-            "radius": radius,
-            "type": place_type,
-            "key": self.api_key
+
+        url = "https://places.googleapis.com/v1/places:searchNearby"
+
+        # Basic-tier fields — id + displayName trigger the Basic SKU ($17/1k
+        # for Place Details style; Nearby Search is billed separately but the
+        # field mask still controls what data is transferred and future tiers).
+        field_mask = (
+            "places.id,places.displayName,places.rating,"
+            "places.userRatingCount,places.photos,places.location,"
+            "places.formattedAddress,places.businessStatus"
+        )
+
+        headers = {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": self.api_key,
+            "X-Goog-FieldMask": field_mask,
         }
-        
+
+        body: Dict[str, Any] = {
+            "locationRestriction": {
+                "circle": {
+                    "center": {"latitude": latitude, "longitude": longitude},
+                    "radius": float(radius),
+                }
+            },
+            "maxResultCount": 20,
+        }
+        if place_type:
+            body["includedTypes"] = [place_type]
+
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(url, params=params)
+                response = await client.post(url, json=body, headers=headers)
                 response.raise_for_status()
                 data = response.json()
-                
-                if data.get("status") not in ["OK", "ZERO_RESULTS"]:
-                    logger.error(f"Google Places API error: {data.get('status')}")
-                    return None
-                
-                return data.get("results", [])
+
+            places = data.get("places", [])
+
+            # Normalise New API response to legacy-compatible shape so that
+            # callers (nearby_attractions_fetcher) need no structural changes.
+            result = []
+            for place in places:
+                location = place.get("location", {})
+
+                # Build photo list — each entry keeps a ``photo_url`` (New API
+                # direct media URL) alongside a null ``photo_reference`` so
+                # callers can prefer photo_url over the legacy path.
+                photos = []
+                for photo in place.get("photos", [])[:3]:
+                    photo_name = photo.get("name")
+                    if photo_name:
+                        photos.append({
+                            "photo_url": (
+                                f"https://places.googleapis.com/v1/{photo_name}"
+                                f"/media?maxWidthPx=400&key={self.api_key}"
+                            ),
+                            "photo_reference": None,  # legacy field unused
+                        })
+
+                result.append({
+                    "place_id": place.get("id"),
+                    "name": place.get("displayName", {}).get("text"),
+                    "rating": place.get("rating"),
+                    "user_ratings_total": place.get("userRatingCount"),
+                    "vicinity": (place.get("formattedAddress") or "").split(",")[0].strip(),
+                    "photos": photos,
+                    "geometry": {
+                        "location": {
+                            "lat": location.get("latitude"),
+                            "lng": location.get("longitude"),
+                        }
+                    },
+                    "business_status": place.get("businessStatus"),
+                })
+
+            return result
         except Exception as e:
             logger.error(f"Error fetching nearby places: {e}")
             return None

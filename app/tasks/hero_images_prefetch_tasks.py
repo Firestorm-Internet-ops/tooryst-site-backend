@@ -229,6 +229,13 @@ def prefetch_hero_images(self, attraction_id: int) -> Dict[str, Any]:
         logger.debug(f"Hero images already cached for attraction {attraction_id}")
         return {"status": "already_cached", "attraction_id": attraction_id}
 
+    # Acquire distributed lock to prevent concurrent fetches for same attraction
+    redis_client = get_redis_client()
+    lock_key = f"prefetch_lock:{attraction_id}"
+    if not redis_client.set(lock_key, "1", nx=True, ex=600):
+        logger.info(f"Prefetch already in progress for attraction {attraction_id}, skipping")
+        return {"status": "locked", "attraction_id": attraction_id}
+
     # Get attraction details from DB
     session = SessionLocal()
     try:
@@ -239,49 +246,49 @@ def prefetch_hero_images(self, attraction_id: int) -> Dict[str, Any]:
         if not attraction.place_id:
             return {"status": "error", "error": "Attraction has no place_id"}
 
-        # 1. Start with the existing GCS hero image if available (Position 0)
-        final_images = []
-        hero_img = session.query(models.HeroImage).filter_by(
-            attraction_id=attraction_id, 
-            position=0
-        ).first()
-
-        if hero_img and hero_img.gcs_url_hero:
-            logger.info(f"Using GCS URL for position 0 of attraction {attraction_id}")
-            final_images.append({
-                "position": 0,
-                "data": hero_img.gcs_url_hero,
-                "alt": f"{attraction.name} - Official Hero",
-                "width": 1600,
-                "height": 900
-            })
-
-        # 2. Fetch and process remaining images (max 9 more from Google)
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-        try:
-            # We want total 10 images. If we have 1 already, fetch 9 more.
-            # We skip the 1st one if we use it, but typically position 0 in DB
-            # might be the same as the first one from Google.
-            # For simplicity, we'll skip the first one from Google if we have a GCS hero.
-            prefetch_count = 10 - len(final_images)
-            skip_count = 1 if len(final_images) > 0 else 0
-
-            prefetched_images = loop.run_until_complete(
-                fetch_and_process_hero_images(
-                    attraction_id=attraction.id,
-                    place_id=attraction.place_id,
-                    attraction_name=attraction.name,
-                    max_images=prefetch_count,
-                    skip_count=skip_count
-                )
+        # 1. Check all positions for permanent GCS images (no Places API call needed)
+        db_gcs_images = (
+            session.query(models.HeroImage)
+            .filter(
+                models.HeroImage.attraction_id == attraction_id,
+                models.HeroImage.gcs_url_hero.isnot(None)
             )
-        finally:
-            loop.close()
+            .order_by(models.HeroImage.position)
+            .all()
+        )
 
-        if prefetched_images:
-            final_images.extend(prefetched_images)
+        if db_gcs_images:
+            logger.info(f"Using {len(db_gcs_images)} GCS images from DB for attraction {attraction_id}")
+            final_images = [
+                {
+                    "position": img.position,
+                    "data": img.gcs_url_hero,
+                    "alt": img.alt_text or attraction.name,
+                    "width": 1600,
+                    "height": 900,
+                }
+                for img in db_gcs_images
+            ]
+        else:
+            # 2. No GCS images in DB — fetch up to 10 from Google Places API
+            final_images = []
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                prefetched_images = loop.run_until_complete(
+                    fetch_and_process_hero_images(
+                        attraction_id=attraction.id,
+                        place_id=attraction.place_id,
+                        attraction_name=attraction.name,
+                        max_images=10,
+                        skip_count=0
+                    )
+                )
+            finally:
+                loop.close()
+
+            if prefetched_images:
+                final_images.extend(prefetched_images)
 
         if not final_images:
             return {"status": "no_photos", "attraction_id": attraction_id}
@@ -302,6 +309,7 @@ def prefetch_hero_images(self, attraction_id: int) -> Dict[str, Any]:
 
     finally:
         session.close()
+        redis_client.delete(lock_key)
 
 
 @celery_app.task(name="app.tasks.hero_images_prefetch_tasks.prefetch_hero_images_batch")

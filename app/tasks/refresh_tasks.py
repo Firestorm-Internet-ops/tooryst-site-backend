@@ -137,7 +137,7 @@ def get_attractions_needing_visitor_info_refresh() -> List[Dict[str, Any]]:
     """
     session = SessionLocal()
     try:
-        threshold_date = datetime.now() - timedelta(days=7)
+        threshold_date = datetime.now() - timedelta(days=30)
         
         attractions = (
             session.query(models.Attraction, models.City, models.AttractionMetadata)

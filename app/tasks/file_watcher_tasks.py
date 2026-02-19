@@ -249,41 +249,55 @@ def process_excel_update(file_path: str):
             # Build search query
             query = f"{search_name} {attr['city']}"
             
-            try:
-                result = loop.run_until_complete(
-                    places_client.find_place(
-                        query=query,
-                        latitude=lat if lat else None,
-                        longitude=lng if lng else None
-                    )
-                )
-                
-                if result and result.get('place_id'):
-                    place_id = result['place_id']
-                    attr['place_id'] = place_id
-                    if search_name != attr['name']:
-                        logger.info(f"  ✓ Found Place ID for {attr['name']} (using resolved_name: {search_name}): {place_id}")
-                    else:
-                        logger.info(f"  ✓ Found Place ID for {attr['name']}: {place_id}")
-                    
-                    # Fetch place details to get timezone
-                    try:
-                        details = loop.run_until_complete(
-                            places_client.get_place_details(place_id)
+            # Use place_id from Excel if available, otherwise look it up via Places API
+            if attr.get('place_id'):
+                logger.info(f"  ✓ Using place_id from Excel for {attr['name']}: {attr['place_id']}")
+            else:
+                try:
+                    result = loop.run_until_complete(
+                        places_client.find_place(
+                            query=query,
+                            latitude=lat if lat else None,
+                            longitude=lng if lng else None
                         )
+                    )
+                    
+                    if result and result.get('place_id'):
+                        place_id = result['place_id']
+                        attr['place_id'] = place_id
+                        if search_name != attr['name']:
+                            logger.info(f"  ✓ Found Place ID for {attr['name']} (using resolved_name: {search_name}): {place_id}")
+                        else:
+                            logger.info(f"  ✓ Found Place ID for {attr['name']}: {place_id}")
+                    else:
+                        attr['place_id'] = None
+                        logger.warning(f"  ⚠ No Place ID found for {attr['name']}")
+                except Exception as e:
+                    attr['place_id'] = None
+                    logger.warning(f"  ⚠ Error fetching Place ID for {attr['name']}: {e}")
+
+            # Always fetch place details to get timezone (unless we failed to get place_id)
+            if attr.get('place_id'):
+                place_id = attr['place_id']
+                    
+                # Fetch place details to get timezone
+                try:
+                    details = loop.run_until_complete(
+                        places_client.get_place_details(place_id)
+                    )
+                    
+                    if details:
+                        # Try to get timezone from API response
+                        timezone_data = details.get('timeZone')
+                        timezone_str = None
                         
-                        if details:
-                            # Try to get timezone from API response
-                            timezone_data = details.get('timeZone')
-                            timezone_str = None
-                            
-                            # Handle both string and dict formats from API
-                            if isinstance(timezone_data, dict):
-                                # API returns {'id': 'Europe/Amsterdam'}
-                                timezone_str = timezone_data.get('id')
-                            elif isinstance(timezone_data, str):
-                                # API returns 'Europe/Amsterdam'
-                                timezone_str = timezone_data
+                        # Handle both string and dict formats from API
+                        if isinstance(timezone_data, dict):
+                            # API returns {'id': 'Europe/Amsterdam'}
+                            timezone_str = timezone_data.get('id')
+                        elif isinstance(timezone_data, str):
+                            # API returns 'Europe/Amsterdam'
+                            timezone_str = timezone_data
                             
                             if timezone_str:
                                 # Validate timezone using zoneinfo
@@ -309,17 +323,13 @@ def process_excel_update(file_path: str):
                         else:
                             attr['timezone'] = 'UTC'
                             logger.warning(f"  ⚠ Could not fetch details for {attr['name']}, using UTC")
-                    except Exception as detail_err:
-                        attr['timezone'] = 'UTC'
-                        logger.warning(f"  ⚠ Error fetching timezone for {attr['name']}: {detail_err}")
-                else:
-                    attr['place_id'] = None
+                except Exception as detail_err:
                     attr['timezone'] = 'UTC'
-                    logger.warning(f"  ⚠ No Place ID found for {attr['name']}")
-            except Exception as e:
+                    logger.warning(f"  ⚠ Error fetching timezone for {attr['name']}: {detail_err}")
+            else:
                 attr['place_id'] = None
                 attr['timezone'] = 'UTC'
-                logger.warning(f"  ⚠ Error fetching Place ID for {attr['name']}: {e}")
+                logger.warning(f"  ⚠ No Place ID found for {attr['name']}")
         
         loop.close()
         
