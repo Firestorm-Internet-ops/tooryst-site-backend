@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Query, Depends, status
 from sqlalchemy.orm import Session
 from app.infrastructure.persistence.db import SessionLocal, get_db
 from pydantic import BaseModel
-from sqlalchemy import func, desc, or_, case
+from sqlalchemy import func, desc, or_, case, and_
 
 from app.config import settings
 from app.infrastructure.persistence.db import SessionLocal
@@ -348,7 +348,10 @@ async def get_city_attractions(
             .filter(models.Attraction.city_id == city.id)
             .outerjoin(
                 models.HeroImage,
-                models.Attraction.id == models.HeroImage.attraction_id
+                and_(
+                    models.Attraction.id == models.HeroImage.attraction_id,
+                    models.HeroImage.position == 0
+                )
             )
             .order_by(
                 desc(models.HeroImage.last_refreshed_at.isnot(None)),
@@ -422,7 +425,10 @@ async def get_attractions(
             .join(models.City, models.Attraction.city_id == models.City.id)
             .outerjoin(
                 models.HeroImage,
-                models.Attraction.id == models.HeroImage.attraction_id
+                and_(
+                    models.Attraction.id == models.HeroImage.attraction_id,
+                    models.HeroImage.position == 0
+                )
             )
         )
 
@@ -432,8 +438,8 @@ async def get_attractions(
         if country:
             query = query.filter(func.lower(models.City.country) == country.lower())
 
-        # Get total count
-        total = query.count()
+        # Get total count (distinct to avoid any remaining join inflation)
+        total = query.with_entities(func.count(func.distinct(models.Attraction.id))).scalar()
 
         # Get attractions with limit
         query = query.order_by(
@@ -648,6 +654,7 @@ async def get_attraction(
             "slug": attr.slug,
             "name": attr.name,
             "city": city.name,
+            "city_slug": city.slug,
             "country": city.country,
             "timezone": city.timezone,
             "latitude": float(attr.latitude) if attr.latitude else None,
@@ -835,6 +842,8 @@ async def get_attraction(
 
         return response_data
 
+    except HTTPException:
+        raise
     except Exception as e:
         import traceback
         logger.error(f"❌ Error fetching attraction '{slug}': {e}", exc_info=True)
