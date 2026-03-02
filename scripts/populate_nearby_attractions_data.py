@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+DEPRECATED: This script uses Google Places API which has been removed.
+Do not run. Nearby attractions data is now served from the database only.
+NOTE: The hardcoded API key in this file must be rotated immediately.
+
 Script to populate missing data in nearby_attractions table.
 
 Handles two cases:

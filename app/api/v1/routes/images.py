@@ -2,7 +2,6 @@
 import asyncio
 import logging
 from typing import List, Optional
-from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
@@ -15,8 +14,6 @@ from app.tasks.hero_images_prefetch_tasks import (
 )
 from app.infrastructure.persistence.db import SessionLocal
 from app.infrastructure.persistence import models
-from app.infrastructure.external_apis.gcs_client import gcs_client, image_processor
-from app.infrastructure.external_apis.hero_images_fetcher import GooglePlacesHeroImagesFetcher
 
 logger = logging.getLogger(__name__)
 
@@ -161,87 +158,10 @@ async def get_hero_image_proxy(attraction_id: int, position: int):
                 logger.debug(f"Cache hit: redirecting to {image_url}")
                 return RedirectResponse(image_url, status_code=302)
 
-        # Only fall through to Google fetch if no DB record (or no URL)
-        
-        # Need to fetch from Google Places and cache to GCS
-        attraction = (
-            session.query(models.Attraction)
-            .filter(models.Attraction.id == attraction_id)
-            .first()
+        raise HTTPException(
+            status_code=404,
+            detail=f"No image available for attraction {attraction_id} at position {position}"
         )
-
-        if not attraction:
-            raise HTTPException(status_code=404, detail=f"Attraction {attraction_id} not found")
-
-        if not attraction.place_id:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Attraction {attraction_id} has no place_id for image fetching"
-            )
-
-        # Fetch photo references from Google Places
-        fetcher = GooglePlacesHeroImagesFetcher()
-        photo_refs = await fetcher.fetch_photo_references(attraction.place_id)
-
-        if not photo_refs:
-            raise HTTPException(
-                status_code=404,
-                detail=f"No photos found for attraction {attraction_id}"
-            )
-
-        if position >= len(photo_refs):
-            raise HTTPException(
-                status_code=404,
-                detail=f"Image position {position} not available (only {len(photo_refs)} photos)"
-            )
-
-        # Download the photo
-        photo_reference = photo_refs[position]["photo_reference"]
-        image_bytes = await fetcher.download_photo_from_reference(
-            photo_reference,
-            max_width=1600
-        )
-
-        if not image_bytes:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to download image for attraction {attraction_id}"
-            )
-
-        # Convert to WebP
-        try:
-            webp_bytes, width, height = image_processor.process_image(image_bytes, 1600)
-        except ValueError as e:
-            logger.error(f"Failed to process image: {e}")
-            raise HTTPException(status_code=500, detail="Failed to process image")
-
-        # Upload to GCS
-        cdn_url = gcs_client.upload_hero_image(attraction_id, position, webp_bytes)
-
-        if not cdn_url:
-            raise HTTPException(status_code=500, detail="Failed to upload image to GCS")
-
-        # Update database with GCS URL
-        if not hero:
-            hero = models.HeroImage(
-                attraction_id=attraction_id,
-                position=position,
-                url=cdn_url,
-                alt_text=f"{attraction.name} - Image {position+1}",
-                created_at=datetime.utcnow()
-            )
-            session.add(hero)
-        
-        hero.gcs_url_hero = cdn_url
-        if not hero.google_photo_reference:
-            hero.google_photo_reference = photo_reference
-
-        session.commit()
-
-        logger.info(f"Cached image to GCS: attraction={attraction_id}, position={position}, url={cdn_url}")
-
-        # Redirect to CDN
-        return RedirectResponse(cdn_url, status_code=302)
 
     except HTTPException:
         raise

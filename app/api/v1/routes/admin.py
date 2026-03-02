@@ -564,7 +564,7 @@ async def get_nearby_attractions_status(
         "attraction_name": attraction.name,
         "total_nearby": len(nearby),
         "from_database": db_attractions,
-        "from_google_places": google_attractions,
+        "from_external": google_attractions,
         "nearby_attractions": [
             {
                 "id": n.id,
@@ -572,7 +572,7 @@ async def get_nearby_attractions_status(
                 "distance_km": float(n.distance_km) if n.distance_km else None,
                 "rating": float(n.rating) if n.rating else None,
                 "review_count": n.review_count,
-                "source": "database" if n.nearby_attraction_id else "google_places",
+                "source": "database" if n.nearby_attraction_id else "external",
                 "has_image": n.image_url is not None,
                 "has_link": n.link is not None
             }

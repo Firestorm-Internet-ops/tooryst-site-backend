@@ -37,7 +37,7 @@ class QuotaManager:
         """Check if API quota is exceeded.
         
         Args:
-            api_name: Name of the API (e.g., 'youtube', 'google_places')
+            api_name: Name of the API (e.g., 'youtube', 'besttime')
             
         Returns:
             True if quota is exceeded and we should skip API calls

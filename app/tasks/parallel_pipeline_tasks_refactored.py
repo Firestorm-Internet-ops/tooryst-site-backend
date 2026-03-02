@@ -18,15 +18,11 @@ from app.infrastructure.persistence.db import SessionLocal
 from app.infrastructure.persistence import models
 
 # Import fetchers
-from app.infrastructure.external_apis.metadata_fetcher import MetadataFetcherImpl
-from app.infrastructure.external_apis.hero_images_fetcher import GooglePlacesHeroImagesFetcher
 from app.infrastructure.external_apis.besttime_fetcher import BestTimeFetcherImpl
 from app.infrastructure.external_apis.weather_fetcher import WeatherFetcherImpl
 from app.infrastructure.external_apis.tips_fetcher import TipsFetcherImpl
 from app.infrastructure.external_apis.map_fetcher import MapFetcherImpl
-from app.infrastructure.external_apis.reviews_fetcher import ReviewsFetcherImpl
 from app.infrastructure.external_apis.social_videos_fetcher import SocialVideosFetcherImpl
-from app.infrastructure.external_apis.nearby_attractions_fetcher import NearbyAttractionsFetcherImpl
 from app.infrastructure.external_apis.audience_fetcher import AudienceFetcherImpl
 
 # Import storage functions
@@ -411,7 +407,7 @@ def process_stage_audiences(pipeline_run_id: int, attraction_id: int):
 STAGE_1_METADATA = StageConfig(
     stage_number=1,
     stage_name='metadata',
-    fetcher_class=MetadataFetcherImpl,
+    fetcher_class=None,  # Places API removed — served from DB
     storage_function=store_metadata,
     result_key='metadata',
     data_type='metadata',
@@ -423,7 +419,7 @@ STAGE_1_METADATA = StageConfig(
 STAGE_2_HERO_IMAGES = StageConfig(
     stage_number=2,
     stage_name='hero_images',
-    fetcher_class=GooglePlacesHeroImagesFetcher,
+    fetcher_class=None,  # Places API removed — served from GCS/DB
     storage_function=store_hero_images,
     result_key='images',
     data_type='hero_images',
@@ -485,7 +481,7 @@ STAGE_6_MAP = StageConfig(
 STAGE_7_REVIEWS = StageConfig(
     stage_number=7,
     stage_name='reviews',
-    fetcher_class=ReviewsFetcherImpl,
+    fetcher_class=None,  # Places API removed — served from DB
     storage_function=store_reviews,
     result_key='reviews',
     data_type='reviews',
@@ -509,7 +505,7 @@ STAGE_8_SOCIAL_VIDEOS = StageConfig(
 STAGE_9_NEARBY = StageConfig(
     stage_number=9,
     stage_name='nearby',
-    fetcher_class=NearbyAttractionsFetcherImpl,
+    fetcher_class=None,  # Places API removed — served from DB
     storage_function=store_nearby_attractions,
     result_key='nearby',
     data_type='nearby_attractions',

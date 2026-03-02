@@ -11,7 +11,6 @@ from app.infrastructure.persistence.db import SessionLocal
 from app.infrastructure.persistence import models
 from app.infrastructure.external_apis.besttime_fetcher import BestTimeFetcherImpl
 from app.infrastructure.external_apis.weather_fetcher import WeatherFetcherImpl
-from app.infrastructure.external_apis.metadata_fetcher import MetadataFetcherImpl
 
 logger = logging.getLogger(__name__)
 
@@ -486,65 +485,9 @@ def refresh_weather_data():
 
 @celery_app.task(name="app.tasks.refresh_tasks.refresh_visitor_info")
 def refresh_visitor_info():
-    """Celery task to refresh visitor info (opening hours) for attractions that need it."""
-    logger.info("Starting visitor info refresh task")
-    
-    try:
-        # Get attractions that need refresh
-        attractions = get_attractions_needing_visitor_info_refresh()
-        
-        if not attractions:
-            logger.info("No attractions need visitor info refresh")
-            return {"status": "success", "processed": 0}
-        
-        # Process each attraction
-        fetcher = MetadataFetcherImpl()
-        success_count = 0
-        error_count = 0
-        
-        for attraction in attractions:
-            try:
-                logger.info(f"Refreshing visitor info for {attraction['name']}")
-                
-                # Fetch data (async)
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                result = loop.run_until_complete(
-                    fetcher.fetch(
-                        attraction_id=attraction['id'],
-                        place_id=attraction.get('place_id'),
-                        attraction_name=attraction['name'],
-                        city_name=attraction['city_name']
-                    )
-                )
-                loop.close()
-                
-                if result and result.get('metadata'):
-                    if store_metadata(attraction['id'], result['metadata']):
-                        success_count += 1
-                        logger.info(f"✓ Refreshed visitor info for {attraction['name']}")
-                    else:
-                        error_count += 1
-                        logger.error(f"✗ Failed to store visitor info for {attraction['name']}")
-                else:
-                    error_count += 1
-                    logger.warning(f"✗ No visitor info data for {attraction['name']}")
-                    
-            except Exception as e:
-                error_count += 1
-                logger.error(f"Error processing {attraction['name']}: {e}")
-        
-        logger.info(f"Visitor info refresh complete: {success_count} success, {error_count} errors")
-        return {
-            "status": "success",
-            "processed": len(attractions),
-            "success": success_count,
-            "errors": error_count
-        }
-        
-    except Exception as e:
-        logger.error(f"Visitor info refresh task failed: {e}")
-        return {"status": "error", "error": str(e)}
+    """No-op: metadata refresh via Places API has been removed."""
+    logger.info("Skipping visitor info refresh: Places API removed")
+    return {"status": "skipped", "reason": "Places API removed"}
 
 
 @celery_app.task(name="app.tasks.refresh_tasks.refresh_weather_for_attraction")

@@ -21,7 +21,6 @@ class Settings:
     # ============================================================================
     # API KEYS
     # ============================================================================
-    GOOGLE_PLACES_API_KEY: Optional[str] = os.getenv("GOOGLE_PLACES_API_KEY")
     GOOGLE_MAPS_API_KEY: Optional[str] = os.getenv("GOOGLE_MAPS_API_KEY")
     YOUTUBE_API_KEY: Optional[str] = os.getenv("YOUTUBE_API_KEY")
     REDDIT_CLIENT_ID: Optional[str] = os.getenv("REDDIT_CLIENT_ID")

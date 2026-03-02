@@ -1,4 +1,9 @@
-"""Script to fetch and update place_ids for existing attractions."""
+"""
+DEPRECATED: This script uses Google Places API which has been removed.
+Do not run. place_id column is kept in DB for historical data only.
+
+Script to fetch and update place_ids for existing attractions.
+"""
 import sys
 import asyncio
 from pathlib import Path

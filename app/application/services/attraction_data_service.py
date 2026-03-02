@@ -42,8 +42,6 @@ from app.application.dto.section_dto import (
     AudienceProfileSectionContentDTO,
     AudienceProfileItemDTO,
 )
-from app.infrastructure.external_apis.nearby_attractions_fetcher import NearbyAttractionsFetcherImpl
-from app.infrastructure.persistence.storage_functions import store_nearby_attractions
 from app.config import settings
 
 
@@ -432,98 +430,6 @@ class AttractionDataService:
             return AttractionCardsDTO()
 
     # -------- Enrichment --------
-    async def _enrich_google_places_images(
-        self,
-        nearby_items: List[NearbyAttractionItemDTO],
-        attraction_id: int
-    ) -> List[NearbyAttractionItemDTO]:
-        """
-        Enrich Google Places attractions with fresh images from Google Places API.
-
-        Identifies attractions by external link URL and fetches fresh photo URLs.
-        Caches images to GCS to avoid repeated API calls.
-
-        Args:
-            nearby_items: List of nearby attraction DTOs
-            attraction_id: ID of the parent attraction (for GCS path)
-
-        Returns:
-            Enriched list with updated image_urls for Google Places attractions
-        """
-        from app.utils.google_places_utils import extract_place_id_from_link
-        from app.infrastructure.external_apis.google_places_client import GooglePlacesClient
-        from app.infrastructure.external_apis.gcs_client import gcs_client, image_processor
-        import httpx
-
-        places_client = GooglePlacesClient()
-
-        for item in nearby_items:
-            # Skip if already has GCS URL
-            if item.gcs_url:
-                item.image_url = item.gcs_url
-                continue
-
-            link = item.link
-
-            # Check if it's a Google Places attraction (external link)
-            is_google_place = link and isinstance(link, str) and "google.com/maps" in link
-
-            if is_google_place and not item.image_url:
-                # Extract place_id from link
-                place_id = extract_place_id_from_link(link)
-
-                if place_id:
-                    try:
-                        # Fetch fresh photo URL
-                        fresh_image_url = await places_client.get_place_photo_url(
-                            place_id=place_id,
-                            max_width=800
-                        )
-
-                        if fresh_image_url:
-                            # Download and cache to GCS
-                            try:
-                                async with httpx.AsyncClient() as client:
-                                    resp = await client.get(fresh_image_url, timeout=30)
-                                    if resp.status_code == 200:
-                                        # Convert to WebP
-                                        webp_bytes, _, _ = image_processor.process_image(
-                                            resp.content, 800
-                                        )
-
-                                        # Upload to GCS
-                                        nearby_key = item.id if item.id else hash(item.name)
-                                        
-                                        gcs_url = gcs_client.upload_nearby_attraction_image(
-                                            attraction_id=attraction_id,
-                                            nearby_attraction_id=nearby_key,
-                                            image_bytes=webp_bytes
-                                        )
-
-                                        if gcs_url:
-                                            item.gcs_url = gcs_url
-                                            item.image_url = gcs_url
-
-                                            # Update DB with GCS URL
-                                            if item.id:
-                                                self._update_nearby_gcs_url(item.id, gcs_url)
-                                            
-                                            self.logger.info(f"Cached nearby image for {item.name}: {gcs_url}")
-                                        else:
-                                            item.image_url = fresh_image_url
-                                    else:
-                                        item.image_url = fresh_image_url
-                            except Exception as e:
-                                self.logger.warning(f"Failed to cache nearby image: {e}")
-                                item.image_url = fresh_image_url
-                        else:
-                            self.logger.debug(f"No fresh image available for {item.name}")
-                    except Exception as e:
-                        self.logger.error(f"Failed to enrich image for {item.name}: {e}")
-                        # Keep existing image_url on error
-
-        return nearby_items
-
     def _update_nearby_gcs_url(self, nearby_id: int, gcs_url: str):
         """Update nearby attraction with GCS URL."""
         if not nearby_id:
@@ -793,10 +699,7 @@ class AttractionDataService:
                         )
                     )
 
-            # Nearby attractions section - HYBRID APPROACH
-            # 1. Query DB first (fast path)
-            # 2. If fewer than target count, call fetcher to get more from Google Places
-            # 3. Persist results to DB for future requests (cache-on-read)
+            # Nearby attractions section — served from DB only
             target_count = settings.NEARBY_ATTRACTIONS_COUNT  # 10
             logger = logging.getLogger(__name__)
 
@@ -808,64 +711,11 @@ class AttractionDataService:
                 .all()
             )
 
-            db_count = len(nearby_rows)
-            logger.info(f"Found {db_count} nearby attractions in DB for {attraction.name}")
+            logger.info(f"Found {len(nearby_rows)} nearby attractions in DB for {attraction.name}")
 
             nearby_items = []
 
-            # If insufficient results AND we have coordinates, call fetcher
-            if db_count < target_count and attraction.latitude and attraction.longitude:
-                logger.info(f"DB has {db_count}/{target_count}, calling fetcher for more...")
-
-                try:
-                    fetcher = NearbyAttractionsFetcherImpl()
-                    fetcher_result = await fetcher.fetch(
-                        attraction_id=attraction.id,
-                        attraction_name=attraction.name,
-                        city_name=city_name,
-                        latitude=float(attraction.latitude),
-                        longitude=float(attraction.longitude),
-                        place_id=attraction.place_id,
-                        force_google=False
-                    )
-
-                    if fetcher_result:
-                        section_items = fetcher_result.get('section', {}).get('items', [])
-                        nearby_list = fetcher_result.get('nearby', [])
-
-                        # Convert fetcher items to DTOs
-                        for item in section_items[:target_count]:
-                            nearby_items.append(
-                                NearbyAttractionItemDTO(
-                                    id=item.get('id') or 0,
-                                    slug=item.get('slug'),
-                                    name=item.get('name'),
-                                    distance_text=item.get('distance_text'),
-                                    distance_km=item.get('distance_km'),
-                                    rating=item.get('rating'),
-                                    user_ratings_total=item.get('user_ratings_total'),
-                                    review_count=item.get('review_count'),
-                                    image_url=item.get('image_url'),
-                                    link=item.get('link'),
-                                    vicinity=item.get('vicinity'),
-                                    audience_type=item.get('audience_type'),
-                                    audience_text=item.get('audience_text'),
-                                )
-                            )
-
-                        # Persist to database for future requests (cache-on-read)
-                        if nearby_list and len(nearby_list) > db_count:
-                            try:
-                                store_nearby_attractions(attraction.id, nearby_list)
-                                logger.info(f"Persisted {len(nearby_list)} nearby attractions to DB")
-                            except Exception as e:
-                                logger.error(f"Failed to persist nearby attractions: {e}")
-
-                except Exception as e:
-                    logger.error(f"Fetcher failed, falling back to DB results: {e}")
-
-            # If fetcher wasn't called or failed, use existing DB results
-            if not nearby_items and nearby_rows:
+            if nearby_rows:
                 for n in nearby_rows:
                     # Start with nearby attraction data
                     image_url = n.gcs_url or n.image_url
@@ -935,10 +785,7 @@ class AttractionDataService:
                         )
                     )
 
-            # Enrich and add section
             if nearby_items:
-                nearby_items = await self._enrich_google_places_images(nearby_items, attraction.id)
-
                 sections.append(
                     SectionDTO(
                         section_type="nearby_attractions",

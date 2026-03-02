@@ -152,16 +152,12 @@ def run_pipeline_for_attractions(attraction_slugs: List[str] = None):
         logger.warning("No pipeline run ID generated")
     
     try:
-        from app.infrastructure.external_apis.hero_images_fetcher import GooglePlacesHeroImagesFetcher
         from app.infrastructure.external_apis.weather_fetcher import WeatherFetcherImpl
         from app.infrastructure.external_apis.map_fetcher import MapFetcherImpl
         from app.infrastructure.external_apis.besttime_fetcher import BestTimeFetcherImpl
-        from app.infrastructure.external_apis.metadata_fetcher import MetadataFetcherImpl
-        from app.infrastructure.external_apis.reviews_fetcher import ReviewsFetcherImpl
         from app.infrastructure.external_apis.tips_fetcher import TipsFetcherImpl
         from app.infrastructure.external_apis.audience_fetcher import AudienceFetcherImpl
         from app.infrastructure.external_apis.social_videos_fetcher import SocialVideosFetcherImpl
-        from app.infrastructure.external_apis.nearby_attractions_fetcher import NearbyAttractionsFetcherImpl
         
         # Import storage functions for refresh tasks
         from app.tasks.refresh_tasks import store_best_time_data, store_weather_data, store_metadata
@@ -201,18 +197,14 @@ def run_pipeline_for_attractions(attraction_slugs: List[str] = None):
         if not attractions:
             return {"status": "success", "processed": 0}
         
-        # Create fetchers
+        # Create fetchers (Places API fetchers removed)
         fetchers = {
-            'hero_images': GooglePlacesHeroImagesFetcher(),
             'weather': WeatherFetcherImpl(),
             'map': MapFetcherImpl(),
             'best_time': BestTimeFetcherImpl(),
-            'metadata': MetadataFetcherImpl(),
-            'reviews': ReviewsFetcherImpl(),
             'tips': TipsFetcherImpl(),
             'audience': AudienceFetcherImpl(),
             'social_videos': SocialVideosFetcherImpl(),
-            'nearby': NearbyAttractionsFetcherImpl()
         }
         
         success_count = 0

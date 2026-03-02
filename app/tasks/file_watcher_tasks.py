@@ -8,7 +8,6 @@ from zoneinfo import ZoneInfo, available_timezones
 
 from app.celery_app import celery_app
 from app.core.notifications import notification_manager, AlertType, AlertSeverity
-from app.infrastructure.external_apis.nearby_attractions_fetcher import NearbyAttractionsFetcherImpl
 from app.infrastructure.persistence.storage_functions import store_nearby_attractions
 
 # Module-level logger for file watcher
@@ -154,7 +153,6 @@ def process_excel_update(file_path: str):
         from datetime import datetime
         from app.infrastructure.persistence.db import SessionLocal
         from app.infrastructure.persistence import models
-        from app.infrastructure.external_apis.google_places_client import GooglePlacesClient
         
         # Read Excel file
         df = pd.read_excel(file_path)
@@ -226,113 +224,10 @@ def process_excel_update(file_path: str):
         logger.info(f"✓ Found {len(new_attractions)} new attractions:")
         for attr in new_attractions:
             logger.info(f"  • {attr['name']} ({attr['city']}, {attr['country']})")
-        
+
         # Import new attractions directly
         logger.info("➕ Importing new attractions to database...")
-        logger.info("🔍 Fetching Google Place IDs...")
-        
-        # Initialize Google Places client
-        places_client = GooglePlacesClient()
-        
-        # Fetch place IDs and timezone for all new attractions
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        
-        for attr in new_attractions:
-            row = df[df['attraction_name'] == attr['name']].iloc[0]
-            lat = row.get('lat')
-            lng = row.get('lng')
-            
-            # Use resolved_name if available, otherwise use attraction name
-            search_name = clean_value(row.get('resolved_name')) or attr['name']
-            
-            # Build search query
-            query = f"{search_name} {attr['city']}"
-            
-            # Use place_id from Excel if available, otherwise look it up via Places API
-            if attr.get('place_id'):
-                logger.info(f"  ✓ Using place_id from Excel for {attr['name']}: {attr['place_id']}")
-            else:
-                try:
-                    result = loop.run_until_complete(
-                        places_client.find_place(
-                            query=query,
-                            latitude=lat if lat else None,
-                            longitude=lng if lng else None
-                        )
-                    )
-                    
-                    if result and result.get('place_id'):
-                        place_id = result['place_id']
-                        attr['place_id'] = place_id
-                        if search_name != attr['name']:
-                            logger.info(f"  ✓ Found Place ID for {attr['name']} (using resolved_name: {search_name}): {place_id}")
-                        else:
-                            logger.info(f"  ✓ Found Place ID for {attr['name']}: {place_id}")
-                    else:
-                        attr['place_id'] = None
-                        logger.warning(f"  ⚠ No Place ID found for {attr['name']}")
-                except Exception as e:
-                    attr['place_id'] = None
-                    logger.warning(f"  ⚠ Error fetching Place ID for {attr['name']}: {e}")
 
-            # Always fetch place details to get timezone (unless we failed to get place_id)
-            if attr.get('place_id'):
-                place_id = attr['place_id']
-                    
-                # Fetch place details to get timezone
-                try:
-                    details = loop.run_until_complete(
-                        places_client.get_place_details(place_id)
-                    )
-                    
-                    if details:
-                        # Try to get timezone from API response
-                        timezone_data = details.get('timeZone')
-                        timezone_str = None
-                        
-                        # Handle both string and dict formats from API
-                        if isinstance(timezone_data, dict):
-                            # API returns {'id': 'Europe/Amsterdam'}
-                            timezone_str = timezone_data.get('id')
-                        elif isinstance(timezone_data, str):
-                            # API returns 'Europe/Amsterdam'
-                            timezone_str = timezone_data
-                            
-                            if timezone_str:
-                                # Validate timezone using zoneinfo
-                                try:
-                                    ZoneInfo(timezone_str)
-                                    attr['timezone'] = timezone_str
-                                    if search_name != attr['name']:
-                                        logger.info(f"  ✓ Found timezone for {attr['name']} (using resolved_name: {search_name}): {timezone_str}")
-                                    else:
-                                        logger.info(f"  ✓ Found timezone for {attr['name']}: {timezone_str}")
-                                except Exception as tz_err:
-                                    logger.warning(f"  ⚠ Invalid timezone '{timezone_str}' for {attr['name']}: {tz_err}")
-                                    attr['timezone'] = 'UTC'
-                            else:
-                                # Fallback: try to determine from UTC offset if available
-                                utc_offset = details.get('utcOffsetMinutes')
-                                if utc_offset is not None:
-                                    attr['timezone'] = get_timezone_from_offset(utc_offset)
-                                    logger.info(f"  ✓ Determined timezone for {attr['name']}: {attr['timezone']} (from UTC offset {utc_offset})")
-                                else:
-                                    attr['timezone'] = 'UTC'
-                                    logger.warning(f"  ⚠ No timezone info for {attr['name']}, using UTC")
-                        else:
-                            attr['timezone'] = 'UTC'
-                            logger.warning(f"  ⚠ Could not fetch details for {attr['name']}, using UTC")
-                except Exception as detail_err:
-                    attr['timezone'] = 'UTC'
-                    logger.warning(f"  ⚠ Error fetching timezone for {attr['name']}: {detail_err}")
-            else:
-                attr['place_id'] = None
-                attr['timezone'] = 'UTC'
-                logger.warning(f"  ⚠ No Place ID found for {attr['name']}")
-        
-        loop.close()
-        
         # Now import to database
         session = SessionLocal()
         affected_city_ids = set()
@@ -490,49 +385,6 @@ def process_excel_update(file_path: str):
             logger.info("PIPELINE INITIALIZATION COMPLETE")
             logger.info("="*80)
 
-            # Refresh nearby attractions for all attractions in affected cities
-            # This is done AFTER pipeline trigger to avoid blocking pipeline start
-            if affected_city_ids:
-                logger.info(f"🔄 Refreshing nearby attractions for cities: {affected_city_ids}")
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                fetcher = NearbyAttractionsFetcherImpl()
-                refreshed = 0
-                try:
-                    city_attractions = session.query(models.Attraction).filter(
-                        models.Attraction.city_id.in_(affected_city_ids)
-                    ).all()
-                    for attraction in city_attractions:
-                        if attraction.latitude is None or attraction.longitude is None:
-                            logger.warning(f"Skipping nearby refresh for {attraction.name} (missing coords)")
-                            continue
-                        city_name = None
-                        if hasattr(attraction, "city") and attraction.city:
-                            city_name = attraction.city.name
-                        if not city_name:
-                            city_obj = session.query(models.City).filter_by(id=attraction.city_id).first()
-                            city_name = city_obj.name if city_obj else "Unknown City"
-                        try:
-                            result = loop.run_until_complete(
-                                fetcher.fetch(
-                                    attraction_id=attraction.id,
-                                    attraction_name=attraction.name,
-                                    city_name=city_name,
-                                    latitude=float(attraction.latitude),
-                                    longitude=float(attraction.longitude),
-                                    place_id=attraction.place_id
-                                )
-                            )
-                            if result and result.get("nearby"):
-                                store_nearby_attractions(attraction.id, result["nearby"])
-                                refreshed += 1
-                        except Exception as e:
-                            logger.warning(f"Nearby refresh failed for {attraction.name}: {e}")
-                finally:
-                    loop.close()
-                logger.info(f"✓ Nearby refresh completed for {refreshed} attractions across {len(affected_city_ids)} cities")
-            else:
-                logger.info("No affected cities for nearby refresh")
             
         except Exception as e:
             session.rollback()

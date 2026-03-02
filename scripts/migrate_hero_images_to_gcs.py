@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """
+DEPRECATED: One-time migration already completed. Google Places API has been removed.
+Do not run. Hero images are permanently stored in GCS and served from DB.
+
 One-time migration script to process all existing hero images to GCS.
 
 This script:

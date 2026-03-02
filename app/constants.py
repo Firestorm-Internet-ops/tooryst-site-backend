@@ -19,7 +19,6 @@ TIP_TYPE_INSIDER = "INSIDER"
 TIP_TYPE_GENERAL = "GENERAL"
 
 # ===== Data Source Identifiers =====
-SOURCE_GOOGLE_PLACES = "google_places_api"
 SOURCE_OPENWEATHER = "openweathermap_api"
 SOURCE_BESTTIME = "besttime_api"
 SOURCE_YOUTUBE = "youtube_api"

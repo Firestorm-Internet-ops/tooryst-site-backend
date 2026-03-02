@@ -17,15 +17,11 @@ from app.infrastructure.persistence.db import SessionLocal
 from app.infrastructure.persistence import models
 
 # Import fetchers
-from app.infrastructure.external_apis.metadata_fetcher import MetadataFetcherImpl
-from app.infrastructure.external_apis.hero_images_fetcher import GooglePlacesHeroImagesFetcher
 from app.infrastructure.external_apis.besttime_fetcher import BestTimeFetcherImpl
 from app.infrastructure.external_apis.weather_fetcher import WeatherFetcherImpl
 from app.infrastructure.external_apis.tips_fetcher import TipsFetcherImpl
 from app.infrastructure.external_apis.map_fetcher import MapFetcherImpl
-from app.infrastructure.external_apis.reviews_fetcher import ReviewsFetcherImpl
 from app.infrastructure.external_apis.social_videos_fetcher import SocialVideosFetcherImpl
-from app.infrastructure.external_apis.nearby_attractions_fetcher import NearbyAttractionsFetcherImpl
 from app.infrastructure.external_apis.audience_fetcher import AudienceFetcherImpl
 
 # Import storage functions
@@ -145,56 +141,12 @@ def process_stage_metadata(pipeline_run_id: int, attraction_id: int):
 
             pipe_logger.info(f"[Stage 1] Processing: {attraction.name}")
 
-            # Skip if metadata was refreshed within the last 60 days
-            existing_metadata = (
-                session.query(models.AttractionMetadata)
-                .filter(models.AttractionMetadata.attraction_id == attraction_id)
-                .first()
-            )
-            if existing_metadata and existing_metadata.updated_at and \
-                    (datetime.utcnow() - existing_metadata.updated_at).days < 60:
-                pipe_logger.info(
-                    f"[Stage 1] Skipping {attraction.name} — metadata is fresh ({existing_metadata.updated_at.date()})"
-                )
-                stage_manager.release_stage_slot('metadata')
-                stage_manager.push_to_stage('hero_images', attraction_id, pipeline_run_id)
-                process_stage_hero_images.delay(pipeline_run_id, attraction_id)
-                return {'status': 'skipped_fresh'}
-
-            # Fetch metadata
-            fetcher = MetadataFetcherImpl()
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-            try:
-                result = loop.run_until_complete(
-                    fetcher.fetch(
-                        attraction_id=attraction.id,
-                        place_id=attraction.place_id,
-                        attraction_name=attraction.name,
-                        city_name=city.name if city else None
-                    )
-                )
-
-                if result and result.get('metadata'):
-                    store_metadata(attraction.id, result['metadata'])
-                    pipe_logger.info(f"[Stage 1] ✓ Stored metadata for {attraction.name}")
-                    status = 'success'
-                else:
-                    pipe_logger.warning(f"[Stage 1] ⚠ No metadata found for {attraction.name}")
-                    status = 'no_data'
-            except Exception as e:
-                pipe_logger.error(f"[Stage 1] ✗ Error fetching metadata: {e}")
-                # Check if rate limited
-                if "rate" in str(e).lower() or "quota" in str(e).lower():
-                    retry_manager.add_to_retry_queue(
-                        attraction_id=attraction.id,
-                        data_type='metadata',
-                        error_message=str(e)
-                    )
-                status = 'error'
-            finally:
-                loop.close()
+            # Places API removed — skip fetch, continue to next stage
+            pipe_logger.info(f"[Stage 1] Skipping {attraction.name} — metadata served from DB")
+            stage_manager.release_stage_slot('metadata')
+            stage_manager.push_to_stage('hero_images', attraction_id, pipeline_run_id)
+            process_stage_hero_images.delay(pipeline_run_id, attraction_id)
+            return {'status': 'skipped_fresh'}
         finally:
             session.close()
 
@@ -261,64 +213,12 @@ def process_stage_hero_images(pipeline_run_id: int, attraction_id: int):
 
             pipe_logger.info(f"[Stage 2] Processing: {attraction.name}")
 
-            # Skip if GCS-processed images already exist for this attraction
-            existing_gcs_images = (
-                session.query(models.HeroImage)
-                .filter(
-                    models.HeroImage.attraction_id == attraction_id,
-                    models.HeroImage.gcs_url_card.isnot(None),
-                    models.HeroImage.gcs_url_hero.isnot(None)
-                )
-                .count()
-            )
-            if existing_gcs_images > 0:
-                pipe_logger.info(
-                    f"[Stage 2] Skipping {attraction.name} — {existing_gcs_images} GCS image(s) already exist"
-                )
-                stage_manager.release_stage_slot('hero_images')
-                stage_manager.push_to_stage('best_time', attraction_id, pipeline_run_id)
-                process_stage_best_time.delay(pipeline_run_id, attraction_id)
-                return {'status': 'skipped_fresh'}
-
-            # Fetch hero images
-            fetcher = GooglePlacesHeroImagesFetcher()
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-            try:
-                result = loop.run_until_complete(
-                    fetcher.fetch(
-                        attraction_id=attraction.id,
-                        place_id=attraction.place_id,
-                        attraction_name=attraction.name,
-                        city_name=city.name if city else None
-                    )
-                )
-
-                if result and result.get('images'):
-                    store_hero_images(attraction.id, result['images'])
-                    image_count = len(result['images'])
-                    pipe_logger.info(f"[Stage 2] ✓ Stored {image_count} hero images for {attraction.name}")
-                    # Track data
-                    data_tracking_manager.update_hero_images_count(pipeline_run_id, attraction_id, image_count)
-                    status = 'success'
-                else:
-                    pipe_logger.warning(f"[Stage 2] ⚠ No hero images found for {attraction.name}")
-                    # Track 0 images
-                    data_tracking_manager.update_hero_images_count(pipeline_run_id, attraction_id, 0)
-                    status = 'no_data'
-            except Exception as e:
-                pipe_logger.error(f"[Stage 2] ✗ Error fetching hero images: {e}")
-                # Check if rate limited
-                if "rate" in str(e).lower() or "quota" in str(e).lower():
-                    retry_manager.add_to_retry_queue(
-                        attraction_id=attraction.id,
-                        data_type='hero_images',
-                        error_message=str(e)
-                    )
-                status = 'error'
-            finally:
-                loop.close()
+            # Places API removed — skip fetch, images served from GCS/DB
+            pipe_logger.info(f"[Stage 2] Skipping {attraction.name} — hero images served from GCS/DB")
+            stage_manager.release_stage_slot('hero_images')
+            stage_manager.push_to_stage('best_time', attraction_id, pipeline_run_id)
+            process_stage_best_time.delay(pipeline_run_id, attraction_id)
+            return {'status': 'skipped_fresh'}
         finally:
             session.close()
 
@@ -915,65 +815,12 @@ def process_stage_reviews(pipeline_run_id: int, attraction_id: int):
             city = session.query(models.City).filter_by(id=attraction.city_id).first()
             pipe_logger.info(f"[Stage 7] Processing: {attraction.name}")
 
-            # Skip if reviews exist and were fetched within the last 60 days
-            from sqlalchemy import func as sqlfunc
-            last_review = (
-                session.query(sqlfunc.max(models.Review.created_at))
-                .filter(models.Review.attraction_id == attraction_id)
-                .scalar()
-            )
-            review_count_db = (
-                session.query(sqlfunc.count(models.Review.id))
-                .filter(models.Review.attraction_id == attraction_id)
-                .scalar()
-            )
-
-            if last_review and review_count_db >= 5 and \
-                    (datetime.utcnow() - last_review).days < 60:
-                pipe_logger.info(
-                    f"[Stage 7] Skipping {attraction.name} — {review_count_db} reviews, last fetched {last_review.date()}"
-                )
-                stage_manager.release_stage_slot('reviews')
-                stage_manager.push_to_stage('social_videos', attraction_id, pipeline_run_id)
-                process_stage_social_videos.delay(pipeline_run_id, attraction_id)
-                return {'status': 'skipped_fresh'}
-
-            fetcher = ReviewsFetcherImpl()
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                result = loop.run_until_complete(
-                    fetcher.fetch(
-                        attraction_id=attraction.id,
-                        place_id=attraction.place_id,
-                        attraction_name=attraction.name,
-                        city_name=city.name if city else None
-                    )
-                )
-
-                if result and result.get('reviews'):
-                    store_reviews(attraction.id, result.get('card', {}), result['reviews'])
-                    review_count = len(result['reviews'])
-                    pipe_logger.info(f"[Stage 7] ✓ Stored {review_count} reviews for {attraction.name}")
-                    # Track data
-                    data_tracking_manager.update_reviews_count(pipeline_run_id, attraction_id, review_count)
-                    status = 'success'
-                else:
-                    pipe_logger.warning(f"[Stage 7] ⚠ No reviews found for {attraction.name}")
-                    # Track 0 reviews
-                    data_tracking_manager.update_reviews_count(pipeline_run_id, attraction_id, 0)
-                    status = 'no_data'
-            except Exception as e:
-                pipe_logger.error(f"[Stage 7] ✗ Reviews error: {e}")
-                if "rate" in str(e).lower() or "quota" in str(e).lower():
-                    retry_manager.add_to_retry_queue(
-                        attraction_id=attraction.id,
-                        data_type='reviews',
-                        error_message=str(e)
-                    )
-                status = 'error'
-            finally:
-                loop.close()
+            # Places API removed — skip fetch, reviews served from DB
+            pipe_logger.info(f"[Stage 7] Skipping {attraction.name} — reviews served from DB")
+            stage_manager.release_stage_slot('reviews')
+            stage_manager.push_to_stage('social_videos', attraction_id, pipeline_run_id)
+            process_stage_social_videos.delay(pipeline_run_id, attraction_id)
+            return {'status': 'skipped_fresh'}
         finally:
             session.close()
 
@@ -1182,70 +1029,12 @@ def process_stage_nearby(pipeline_run_id: int, attraction_id: int):
             city = session.query(models.City).filter_by(id=attraction.city_id).first()
             pipe_logger.info(f"[Stage 9] Processing: {attraction.name}")
 
-            # Skip if nearby data was refreshed within the last 60 days
-            last_nearby = (
-                session.query(func.max(models.NearbyAttraction.created_at))
-                .filter(models.NearbyAttraction.attraction_id == attraction_id)
-                .scalar()
-            )
-            if last_nearby and (datetime.utcnow() - last_nearby).days < 60:
-                pipe_logger.info(
-                    f"[Stage 9] Skipping {attraction.name} — nearby data is fresh ({last_nearby.date()})"
-                )
-                stage_manager.release_stage_slot('nearby')
-                stage_manager.push_to_stage('audiences', attraction_id, pipeline_run_id)
-                process_stage_audiences.delay(pipeline_run_id, attraction_id)
-                return {'status': 'skipped_fresh'}
-
-            # Validate coordinates
-            latitude = getattr(attraction, "latitude", None)
-            longitude = getattr(attraction, "longitude", None)
-            city_name = city.name if city else None
-            pipe_logger.info(f"[Stage 9] Parameters - lat: {latitude}, lng: {longitude}, city_name: {city_name}")
-
-            if latitude is None or longitude is None:
-                pipe_logger.error(f"[Stage 9] Missing coordinates for {attraction.name}; skipping nearby fetch")
-                return {'status': 'error', 'error': 'missing_coordinates'}
-
-            fetcher = NearbyAttractionsFetcherImpl()
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                # Cast lat/lng to float to avoid Decimal math issues downstream
-                result = loop.run_until_complete(
-                    fetcher.fetch(
-                        attraction_id=attraction.id,
-                        attraction_name=attraction.name,
-                        city_name=city_name if city_name else "Unknown City",  # Provide default
-                        latitude=float(latitude),
-                        longitude=float(longitude),
-                        place_id=attraction.place_id
-                    )
-                )
-
-                if result and result.get('nearby'):
-                    store_nearby_attractions(attraction.id, result['nearby'])
-                    nearby_count = len(result['nearby'])
-                    pipe_logger.info(f"[Stage 9] ✓ Stored {nearby_count} nearby attractions for {attraction.name}")
-                    # Track data
-                    data_tracking_manager.update_nearby_attractions_count(pipeline_run_id, attraction_id, nearby_count)
-                    status = 'success'
-                else:
-                    pipe_logger.warning(f"[Stage 9] ⚠ No nearby attractions found for {attraction.name}")
-                    # Track 0 nearby attractions
-                    data_tracking_manager.update_nearby_attractions_count(pipeline_run_id, attraction_id, 0)
-                    status = 'no_data'
-            except Exception as e:
-                pipe_logger.error(f"[Stage 9] ✗ Nearby attractions error: {e}")
-                if "rate" in str(e).lower() or "quota" in str(e).lower():
-                    retry_manager.add_to_retry_queue(
-                        attraction_id=attraction.id,
-                        data_type='nearby',
-                        error_message=str(e)
-                    )
-                status = 'error'
-            finally:
-                loop.close()
+            # Places API removed — skip fetch, nearby attractions served from DB
+            pipe_logger.info(f"[Stage 9] Skipping {attraction.name} — nearby attractions served from DB")
+            stage_manager.release_stage_slot('nearby')
+            stage_manager.push_to_stage('audiences', attraction_id, pipeline_run_id)
+            process_stage_audiences.delay(pipeline_run_id, attraction_id)
+            return {'status': 'skipped_fresh'}
         finally:
             session.close()
 
